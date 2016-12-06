@@ -1,6 +1,6 @@
 # Introduction
 
-Scans files as their uploaded and denies uploading if a virus was detected. If the ClamAV daemon is down it will log
+Using ClamAV, this module scans files as their uploaded and denies uploading if a virus was detected. If the ClamAV daemon is down it will log
 that the file needs to be scanned, wherein you can either manually scan via the CMS once the daemon is back online, run a
 nightly cron that scans the files or if you have queuedjobs installed, it will automatically scan missed files at nightly.
 
@@ -49,7 +49,7 @@ SilbinaryWolf\SteamedClams\ClamAV:
     LocalSocket: '/var/run/clamav/clamd.ctl'
   # If true and the ClamAV daemon isn't running or isn't installed the file will be denied as if it has a virus.
   deny_on_failure: false
-  # For configuring on existing site builds and ignoring the scanning of old `File` records. 
+  # For configuring on existing site builds and ignoring the scanning of pre-module install `File` records. 
   initial_scan_ignore_before_datetime: '1970-12-25 00:00:00'
 ```
 
@@ -65,6 +65,23 @@ SilbinaryWolf\SteamedClams\ClamAVScanJob:
   # Repeat at 2am by default
   time: '02:00:00'
 ```
+
+# Install on existing project
+
+By running the task below, all files uploaded before installation of the module will be
+scanned.
+
+```
+/dev/tasks/SilbinaryWolf-SteamedClams-ClamAVInstallTask
+```
+
+To ignore certain files before a specific date, you can configure the datetime below like so:
+
+```
+SilbinaryWolf\SteamedClams\ClamAV:
+  initial_scan_ignore_before_datetime: '2015-06-06 00:00:00'
+```
+
 
 # Emulate Mode
 
