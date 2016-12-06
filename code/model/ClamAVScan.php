@@ -379,7 +379,7 @@ class ClamAVScan extends \DataObject {
 	 * @return array
 	 */
 	public function getRawData() {
-		$value = $this->owner->getField('RawData');
+		$value = $this->getField('RawData');
 		if (is_string($value)) {
 			$value = json_decode($value, true);
 		}
@@ -393,7 +393,7 @@ class ClamAVScan extends \DataObject {
 		if (is_array($value)) {
 			$value = json_encode($value);
 		}
-		$this->owner->setField('RawData', $value);
+		$this->setField('RawData', $value);
 	}
 
 	/**

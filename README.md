@@ -6,7 +6,9 @@ nightly cron that scans the files or if you have queuedjobs installed, it will a
 
 # Screenshots
 
-![steamedhams](https://cloud.githubusercontent.com/assets/3859574/20907335/b8459310-bba1-11e6-86d2-3a5f6cc6e959.jpg)
+![ModelAdmin](https://cloud.githubusercontent.com/assets/3859574/20911711/000abbd2-bbbe-11e6-9b93-f0490cc055f7.png)
+
+![UploadField](https://cloud.githubusercontent.com/assets/3859574/20907335/b8459310-bba1-11e6-86d2-3a5f6cc6e959.jpg)
 
 # Quick Start
 
@@ -99,7 +101,7 @@ use SilbinaryWolf\SteamedClams\ClamAV;
 use SilbinaryWolf\SteamedClams\ClamAVEmulator;
 
 // Use this instead of YAML for quicker testing
-Config::inst()->update('Injector', 'SilbinaryWolf\SteamedClams\ClamAV', array('class' => 'SilbinaryWolf\SteamedClams\ClamAVEmulator'))
+Config::inst()->update('Injector', 'SilbinaryWolf\SteamedClams\ClamAV', array('class' => 'SilbinaryWolf\SteamedClams\ClamAVEmulator'));
 
 // If no virus found
 ClamAVEmulator::config()->mode = ClamAVEmulator::MODE_NO_VIRUS;
