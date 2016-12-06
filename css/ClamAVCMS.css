@@ -1,0 +1,28 @@
+.cms .clamav-buttons {
+	text-align: left;
+	padding-bottom: 0;
+}
+
+.cms .clamav-button.clamav-button.clamav-button.clamav-button {
+	/* NOTE(Jake): Ensure it beats any CMS specifity */
+	margin-bottom: 10px;
+}
+
+/* Delete Button */
+.cms .ui-button.clamav-delete-button {
+	color: #fff;
+	text-shadow:none;
+	border: solid 1px #980c10;
+	background: #d81b21;
+	background: -webkit-gradient(linear, left top, left bottom, from(#ed1c24), to(#aa1317));
+	background: -moz-linear-gradient(top,  #ed1c24,  #aa1317);
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#ed1c24', endColorstr='#aa1317');
+}
+
+.cms .ui-button.clamav-delete-button:hover,
+.cms .ui-button.clamav-delete-button:active {
+	background: #b61318;
+	background: -webkit-gradient(linear, left top, left bottom, from(#c9151b), to(#a11115));
+	background: -moz-linear-gradient(top,  #c9151b,  #a11115);
+	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#c9151b', endColorstr='#a11115');
+}
