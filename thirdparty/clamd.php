@@ -128,7 +128,10 @@ class ClamdPipe extends ClamdBase {
     }
 
     protected function getSocket() {
-        $socket = socket_create(AF_UNIX, SOCK_STREAM, 0);
+        $socket = @socket_create(AF_UNIX, SOCK_STREAM, 0);
+        if ($socket === FALSE) {
+            throw new ClamdSocketException('', socket_last_error());
+        }
         $hasError = @socket_connect($socket, $this->pip);
         if ($hasError === FALSE) {
             $errorCode = socket_last_error();
@@ -156,7 +159,10 @@ class ClamdNetwork extends ClamdBase {
     }
 
     protected function getSocket() {
-        $socket = socket_create(AF_INET, SOCK_STREAM, 0);
+        $socket = @socket_create(AF_INET, SOCK_STREAM, 0);
+        if ($socket === FALSE) {
+            throw new ClamdSocketException('', socket_last_error());
+        }
         $hasError = @socket_connect($socket, $this->host, $this->port);
         if ($hasError === FALSE) {
             throw new ClamdSocketException('', socket_last_error());
