@@ -10,6 +10,7 @@ use SS_Log;
 use Injector;
 use ArrayList;
 use SS_Datetime;
+use Director;
 
 class ClamAV extends \Object {
 	const MODULE_DIR = 'steamedclams';
