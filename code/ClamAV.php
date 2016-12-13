@@ -69,12 +69,12 @@ class ClamAV extends \Object {
 	 * @return ClamAVScan|null
 	 */
 	public function scanFileRecordForVirus(File $file) {
-		$isFileExternal = false;
+		$isFileMaybeExternal = false;
 		$filepath = $file->getFullPath();
 		if (!file_exists($filepath)) {
 			// If file can't be found, attempt to download
 			// from external CDN or similar.
-			$isFileExternal = true;
+			$isFileMaybeExternal = true;
 			$this->beforeHandleMissingFile($file);
 		}
 		if (!file_exists($filepath)) {
@@ -84,7 +84,7 @@ class ClamAV extends \Object {
 		if ($record && $record instanceof \DataObject) {
 			$record->FileID = $file->ID;
 		}
-		if ($isFileExternal) {
+		if ($isFileMaybeExternal) {
 			// If file was downloaded from external CDN
 			// or similar, delete the file / cleanup.
 			$this->afterHandleMissingFile($file);

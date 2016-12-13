@@ -41,13 +41,14 @@ class ClamAVBaseTask extends \BuildTask {
 		foreach ($list as $file) {
 			// Skip `Folder` type
 			if (!$file->isVirusScannable()) {
-				$this->log('Skipping '.$file->ClassName.' #'.$file->ID.', this type cannot be scanned.');
+				$this->log('Cannot scan this type, skipping '.$file->ClassName.' #'.$file->ID.'.');
 				continue;
 			}
 
 			$path = $file->getFullPath();
 			if (!$path) {
 				$this->log('Skipping '.$file->ClassName.' #'.$file->ID.', no path on record. getFullPath = "'.$path.'"');
+				continue;
 			}
 			$logRecord = $file->scanForVirus();
 			if ($logRecord === ClamAV::OFFLINE) {

@@ -7,6 +7,7 @@ use HTMLText;
 use Member;
 use Controller;
 use Session;
+use Director;
 
 class ClamAVScan extends \DataObject {
 	// This *should not* be stored in DB, number order can be modified.
@@ -57,8 +58,13 @@ class ClamAVScan extends \DataObject {
 	);
 
 	private static $searchable_fields = array(
-		'Member.ID' => array(
-			'title' => 'Member',
+		'MemberID' => array(
+			'title' => 'Member ID',
+			'field' => 'NumericField',
+		),
+		'FileID' => array(
+			'title' => 'File ID',
+			'field' => 'NumericField',
 		),
 		'IPAddress' => array(
 			'title' => 'IP Address',
@@ -143,31 +149,66 @@ class ClamAVScan extends \DataObject {
 	public function onBeforeWrite() {
 		parent::onBeforeWrite();
 
+		// If not written yet, apply defaults
 		if (!$this->exists()) {
+			// Store Member that is running the scan
 			if (!$this->MemberID) {
-				$this->MemberID = Member::currentUserID();
-			}
-			$controller = (Controller::has_curr()) ? Controller::curr() : null;
-			if ($controller) {
-				if (!$this->ContextURL) {
-					// Store URL
-					$request = $controller->getRequest();
-					if ($request) {
-						$this->ContextURL = $request->getURL(true);
-					}
+				if (Director::is_cli()) {
+					// NOTE(Jake): We don't want scans done during cron/queuedjobs
+					//			   to log the Member, as technically no Member
+					//			   technically triggered the behaviour.
+					$this->MemberID = 0;
+				} else {
+					$this->MemberID = Member::currentUserID();
 				}
+			}
 
-				// Store PageID
-				if (!$this->ContextPageID) {
-					$page = null;
-					if ($controller instanceof \ContentController) {
-						$page = $controller->data();
+			$lastScan = ClamAVScan::get()->filter(array(
+				'IsScanned' => 0,
+				'Action' => ClamAVScan::ACTION_NONE,
+				'FileID' => $this->FileID,
+			));
+			$lastScan = $lastScan->sort('ID', 'DESC');
+			$lastScan = $lastScan->first();
+			if ($lastScan) {
+				// If a scan log exists where the scan failed due to the daemon being
+				// down, bring its upload context information across.
+				$inheritFields = array(
+					'ContextURL',
+					'ContextPageID',
+				);
+				foreach ($inheritFields as $inheritField) {
+					if ($this->{$inheritField}) {
+						// Skip values that have been set manually
+						continue;
 					}
-					if ($controller instanceof \LeftAndMain) {
-						$page = $controller->currentPage();
+					$inheritValue = $lastScan->getField($inheritField);
+					$this->setField($inheritField, $inheritValue);
+				}
+			} else {
+				// Store Context URL (where this was created)
+				$controller = (Controller::has_curr()) ? Controller::curr() : null;
+				if ($controller) {
+					if (!$this->ContextURL) {
+						// Store URL
+						$request = $controller->getRequest();
+						if ($request) {
+							$this->ContextURL = $request->getURL(true);
+						}
 					}
-					if ($page && $page->exists()) {
-						$this->ContextPageID = $page->ID;
+
+					// Store PageID
+					if (!$this->ContextPageID) {
+						$page = null;
+						if ($controller instanceof \ContentController) {
+							$page = $controller->data();
+						}
+						if ($controller instanceof \LeftAndMain) {
+							$page = $controller->currentPage();
+						}
+						if ($page && $page->exists()) {
+							$this->ContextPageID = $page->ID;
+						}
 					}
 				}
 			}
@@ -175,16 +216,22 @@ class ClamAVScan extends \DataObject {
 	}
 
 	public function onAfterWrite() {
-		/*if ($this->FileID) {
-			// Remove any older scan records that isnt self
+		if ($this->FileID) {
+			// Remove any older scan records on the same file
+			// that are waiting to scan.
+			// ie. ClamAVScanTask finds 'IsScanned => 0' items then
+			//	   creates a new scan record. If this happens, remove 
+			//	   any "pending to be scanned" records (ie. IsScanned = 0)
 			$oldScanRecords = self::get()->filter(array(
 				'FileID' => $this->FileID,
+				'IsScanned' => 0,
+				'Action' => ClamAVScan::ACTION_NONE,
 				'ID:not' => $this->owner->ID,
 			));
 			foreach ($oldScanRecords as $record) {
 				$record->delete();
 			}
-		}*/
+		}
 		// Queue the job (if needed)
 		if (!$this->IsScanned && class_exists('SilbinaryWolf\SteamedClams\ClamAVScanJob')) {
 			singleton('SilbinaryWolf\SteamedClams\ClamAVScanJob')->queueMyselfIfNeeded();
