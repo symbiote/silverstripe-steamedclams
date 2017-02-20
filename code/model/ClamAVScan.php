@@ -226,7 +226,7 @@ class ClamAVScan extends \DataObject {
 				'FileID' => $this->FileID,
 				'IsScanned' => 0,
 				'Action' => ClamAVScan::ACTION_NONE,
-				'ID:not' => $this->owner->ID,
+				'ID:not' => $this->ID,
 			));
 			foreach ($oldScanRecords as $record) {
 				$record->delete();
@@ -244,7 +244,7 @@ class ClamAVScan extends \DataObject {
 	 * @return boolean
 	 */
 	public function processFileActionScan() {
-		$file = $this->owner->File();
+		$file = $this->File();
 		if (!$file || !$file->exists()) {
 			return false;
 		}
