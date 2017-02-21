@@ -77,7 +77,7 @@ scanned.
 /dev/tasks/SilbinaryWolf-SteamedClams-ClamAVInstallTask
 ```
 
-To ignore certain files before a specific date, you can configure the datetime below like so:
+To ignore certain files before a specific date, you can configure the datetime in your `YML` files, as below:
 
 ```
 SilbinaryWolf\SteamedClams\ClamAV:
