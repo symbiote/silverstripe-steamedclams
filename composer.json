@@ -10,7 +10,7 @@
         "email": "jake@silverstripe.com.au"
     }],
     "require": {
-        "silverstripe/framework": "~3.1"
+        "silverstripe/framework": "~3.2"
     },
     "suggest": {
         "silverstripe/queuedjobs": "For allowing ClamAV 'missed files' scan to be run from a queued job. Otherwise you can run the tasks manually or via cronjob."
