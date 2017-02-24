@@ -38,7 +38,7 @@ LocalSocket /var/run/clamav/clamd.ctl
 
 (optional) You can use a different socket path, but you will need to change it in
 the config YML like below to match your clamd.conf:
-```
+```yml
 SilbinaryWolf\SteamedClams\ClamAV:
   clamd:
     LocalSocket: '/var/run/clamav/clamd.ctl'
@@ -50,7 +50,7 @@ SilbinaryWolf\SteamedClams\ClamAV:
 
 # Configuration
 
-```
+```yml
 SilbinaryWolf\SteamedClams\ClamAV:
   # Make this the same as your clamd.conf settings
   clamd:
@@ -64,7 +64,7 @@ SilbinaryWolf\SteamedClams\ClamAV:
 If you have the QueuedJobs module installed, you can configure when files missed by ClamAV daemon are scanned.
 This job will only queue if the daemon couldn't be connected to at the time that the file was uploaded.
 
-```
+```yml
 SilbinaryWolf\SteamedClams\ClamAVScanJob:
   # This job will queue itself on dev/build by default if `File` records have been missed in scanning.
   disable_queue_on_devbuild: false
@@ -85,7 +85,7 @@ scanned.
 
 To ignore certain files before a specific date, you can configure the datetime in your `YML` files, as below:
 
-```
+```yml
 SilbinaryWolf\SteamedClams\ClamAV:
   initial_scan_ignore_before_datetime: '2015-06-06 00:00:00'
 ```
@@ -95,14 +95,16 @@ SilbinaryWolf\SteamedClams\ClamAV:
 
 To emulate ClamAV results, put in your YML
 
-```
+```yml
 Injector:
   SilbinaryWolf\SteamedClams\ClamAV:
     class: SilbinaryWolf\SteamedClams\ClamAVEmulator
 ```
 
 Then in your _config.php, switch between various testing modes:
-```
+```php
+<?php
+
 use SilbinaryWolf\SteamedClams\ClamAV;
 use SilbinaryWolf\SteamedClams\ClamAVEmulator;
 
