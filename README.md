@@ -4,6 +4,12 @@ Using ClamAV, this module scans files as their uploaded and denies uploading if 
 that the file needs to be scanned, wherein you can either manually scan via the CMS once the daemon is back online, run a
 nightly cron that scans the files or if you have queuedjobs installed, it will automatically scan missed files at nightly.
 
+# Composer Install
+
+```
+composer require silbinarywolf/silverstripe-steamedclams:~1.0.0
+```
+
 # Screenshots
 
 ![ModelAdmin](https://cloud.githubusercontent.com/assets/3859574/20911711/000abbd2-bbbe-11e6-9b93-f0490cc055f7.png)
