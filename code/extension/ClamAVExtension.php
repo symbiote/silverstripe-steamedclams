@@ -77,7 +77,7 @@ class ClamAVExtension extends \DataExtension {
 		if ($this->owner->ID == 0) {
 			$filepath = $this->owner->getFullPath();
 			if (file_exists($filepath)) {
-				@unlink($filepath);
+				//@unlink($filepath);
 			}
 			$record->Action = ClamAVScan::ACTION_DELETED;
 		}
