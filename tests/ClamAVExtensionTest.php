@@ -6,7 +6,7 @@ use ValidationException;
 
 class ClamAVExtensionTest extends \SapphireTest {
 	protected $usesDatabase = true;
-	
+
 	public function setUp() {
 		parent::setUp();
 	}
@@ -37,6 +37,7 @@ class ClamAVExtensionTest extends \SapphireTest {
 
 	public function testFileLogIfVirus() {
 		ClamAVEmulator::config()->mode = ClamAVEmulator::MODE_HAS_VIRUS;
+		ClamAV::config()->deny_on_failure = false;
 
 		$fileCount = File::get()->count();
 		$record = File::create();
@@ -51,6 +52,7 @@ class ClamAVExtensionTest extends \SapphireTest {
 
 	public function testFileLogIfVirusScannerOffline() {
 		ClamAVEmulator::config()->mode = ClamAVEmulator::MODE_OFFLINE;
+		ClamAV::config()->deny_on_failure = false;
 
 		$fileCount = File::get()->count();
 
@@ -83,12 +85,14 @@ class ClamAVExtensionTest extends \SapphireTest {
 
 		// Ensure the file is removed during File::validate()
 		$fileExists = file_exists($filepath);
+		// Cleanup from file system for local testing reasons
 		@unlink($filepath);
 		$this->assertFalse($fileExists);
 	}
 
 	public function testPhysicalFileRemovalOnNewFileRecordIfNotDenied() {
 		ClamAVEmulator::config()->mode = ClamAVEmulator::MODE_HAS_VIRUS;
+		ClamAV::config()->deny_on_failure = false;
 
 		$filename = 'clamav_'.__FUNCTION__.'.txt';
 		$filepath = ASSETS_PATH.DIRECTORY_SEPARATOR.$filename;
@@ -106,6 +110,7 @@ class ClamAVExtensionTest extends \SapphireTest {
 
 		// Ensure the file stays if not denying files
 		$fileExists = file_exists($filepath);
+		// Cleanup from file system for local testing reasons
 		@unlink($filepath);
 		$this->assertTrue($fileExists);
 	}
