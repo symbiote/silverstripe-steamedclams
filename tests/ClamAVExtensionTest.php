@@ -5,6 +5,8 @@ use File;
 use ValidationException;
 
 class ClamAVExtensionTest extends \SapphireTest {
+	protected $usesDatabase = true;
+	
 	public function setUp() {
 		parent::setUp();
 	}
