@@ -7,7 +7,7 @@ nightly cron that scans the files or if you have queuedjobs installed, it will a
 # Composer Install
 
 ```
-composer require silbinarywolf/silverstripe-steamedclams:~1.0.0
+composer require silbinarywolf/silverstripe-steamedclams:~1.1.0
 ```
 
 # Screenshots
