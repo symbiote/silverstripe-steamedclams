@@ -1,6 +1,8 @@
 <?php
 
 namespace SilbinaryWolf\SteamedClams;
+
+use ModelAdmin;
 use ReadonlyField;
 use Controller;
 use Requirements;
@@ -11,13 +13,14 @@ use Permission;
  * Class SilbinaryWolf\SteamedClams\ClamAVAdmin
  *
  */
-class ClamAVAdmin extends \ModelAdmin {
-	private static $url_segment = 'clamav';
-	private static $menu_title = 'ClamAV';
-	private static $managed_models = array(
+class ClamAVAdmin extends ModelAdmin
+{
+    private static $url_segment = 'clamav';
+    private static $menu_title = 'ClamAV';
+    private static $managed_models = array(
         'SilbinaryWolf\\SteamedClams\\ClamAVScan',
     );
-	private static $menu_icon = 'steamedclams/images/clamav_icon.png';
+    private static $menu_icon = 'steamedclams/images/clamav_icon.png';
 
     private static $allowed_actions = array(
         'Assets',
@@ -29,7 +32,8 @@ class ClamAVAdmin extends \ModelAdmin {
      *
      * @return \SS_HTTPResponse
      */
-    public function Assets() {
+    public function Assets()
+    {
         $request = $this->getRequest();
         $id = $request->shift();
         if (!$id) {
@@ -40,15 +44,18 @@ class ClamAVAdmin extends \ModelAdmin {
             return $this->redirect($this->Link());
         }
         $assetAdmin->setCurrentPageID($id);
+
         //Session::set($assetAdmin->class.".currentPage", (int)$id);
-        return $this->redirect(Controller::join_links($assetAdmin->Link('EditForm'), 'field', 'File', 'item', $id, 'edit'));
+        return $this->redirect(Controller::join_links($assetAdmin->Link('EditForm'), 'field', 'File', 'item', $id,
+            'edit'));
     }
 
-	public function getEditForm($id = null, $fields = null) {
+    public function getEditForm($id = null, $fields = null)
+    {
         $self = &$this;
-        $this->beforeExtending('updateEditForm', function($form) use ($self) {
-            Requirements::css(ClamAv::MODULE_DIR.'/css/ClamAVCMS.css');
-        
+        $this->beforeExtending('updateEditForm', function ($form) use ($self) {
+            Requirements::css(ClamAv::MODULE_DIR . '/css/ClamAVCMS.css');
+
             $fields = $form->Fields();
             $insertBeforeFieldName = str_replace('\\', '-', $self->config()->managed_models[0]);
             $gridField = $fields->dataFieldByName($insertBeforeFieldName);
@@ -73,10 +80,10 @@ class ClamAVAdmin extends \ModelAdmin {
 
                 $exception = $clamAV->getLastException();
                 if ($exception) {
-                    $reason = 'Reason: '.$exception->getMessage();
+                    $reason = 'Reason: ' . $exception->getMessage();
                 }
             } else {
-                $version = '<strong style="color: #18BA18;">ONLINE</strong> ('.$version.')';
+                $version = '<strong style="color: #18BA18;">ONLINE</strong> (' . $version . ')';
             }
 
             $versionField = ReadonlyField::create('ClamAV_Version', 'ClamAV Version', $version);
@@ -91,7 +98,8 @@ class ClamAVAdmin extends \ModelAdmin {
                 $listCount = $list->count();
             }
             if ($listCount > 0) {
-                $fields->insertBefore(ReadonlyField::create('ClamAV_InitialScan', 'Files to scan with install task', $listCount.' '), $insertBeforeFieldName);
+                $fields->insertBefore(ReadonlyField::create('ClamAV_InitialScan', 'Files to scan with install task',
+                    $listCount . ' '), $insertBeforeFieldName);
             }
 
             // Files that failed to scan 
@@ -100,10 +108,13 @@ class ClamAVAdmin extends \ModelAdmin {
             if ($list) {
                 $listCount = $list->count();
             }
-            $fields->insertBefore(ReadonlyField::create('ClamAV_NeedScan', 'Files that failed to scan', $listCount.' ')->setRightTitle('Due to ClamAV daemon being inaccessible/offline.'), $insertBeforeFieldName);
+            $fields->insertBefore(ReadonlyField::create('ClamAV_NeedScan', 'Files that failed to scan',
+                $listCount . ' ')->setRightTitle('Due to ClamAV daemon being inaccessible/offline.'),
+                $insertBeforeFieldName);
         });
 
         $form = parent::getEditForm($id, $fields);
+
         return $form;
     }
 }
