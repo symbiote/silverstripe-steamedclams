@@ -2,19 +2,20 @@
 
 namespace SilbinaryWolf\SteamedClams;
 use ReadonlyField;
-use LiteralField;
-use Debug;
-use Session;
 use Controller;
 use Requirements;
 use Injector;
 use Permission;
 
+/**
+ * Class SilbinaryWolf\SteamedClams\ClamAVAdmin
+ *
+ */
 class ClamAVAdmin extends \ModelAdmin {
 	private static $url_segment = 'clamav';
 	private static $menu_title = 'ClamAV';
 	private static $managed_models = array(
-        'SilbinaryWolf\SteamedClams\ClamAVScan',
+        'SilbinaryWolf\\SteamedClams\\ClamAVScan',
     );
 	private static $menu_icon = 'steamedclams/images/clamav_icon.png';
 
@@ -60,10 +61,10 @@ class ClamAVAdmin extends \ModelAdmin {
                     $gridConfig->removeComponentsByType('GridFieldEditButton');
                     $gridConfig->removeComponentsByType('GridFieldDeleteAction');
                 }
-                $gridConfig->addComponent(Injector::inst()->create('SilbinaryWolf\SteamedClams\GridFieldClamAVAction'));
+                $gridConfig->addComponent(Injector::inst()->create('SilbinaryWolf\\SteamedClams\\GridFieldClamAVAction'));
             }
 
-            $clamAV = singleton('SilbinaryWolf\SteamedClams\ClamAV');
+            $clamAV = Injector::inst()->get('SilbinaryWolf\\SteamedClams\\ClamAV');
 
             $version = $clamAV->version();
             $reason = '';

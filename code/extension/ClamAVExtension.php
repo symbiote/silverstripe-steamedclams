@@ -1,13 +1,19 @@
 <?php
 
 namespace SilbinaryWolf\SteamedClams;
-use Debug;
+use DataList;
+use File;
 use Folder;
-use LogicException;
 use DataObject;
-use FieldList;
-use Controller;
+use Injector;
+use ValidationResult;
 
+/**
+ * Class SilbinaryWolf\SteamedClams\ClamAVExtension
+ *
+ * @property File|ClamAVExtension $owner
+ * @method DataList|ClamAVScan[] ClamAVScans()
+ */
 class ClamAVExtension extends \DataExtension {
 	private static $has_many = array(
 		'ClamAVScans' => 'SilbinaryWolf\\SteamedClams\\ClamAVScan',
@@ -25,12 +31,13 @@ class ClamAVExtension extends \DataExtension {
 		// todo(Jake): Show 'ClamAVScans' on AssetAdmin/File level.
 	//}
 
-	/** 
-	 * This is called within `File::write()` but before `File::onBeforeWrite()`.
-	 *
-	 * @return null
-	 */
-	public function validate(\ValidationResult $validationResult) {
+    /**
+     * This is called within `File::write()` but before `File::onBeforeWrite()`.
+     *
+     * @param ValidationResult $validationResult
+     * @return null
+     */
+	public function validate(ValidationResult $validationResult) {
 		// If its a new file, scan it.
 		$doVirusScan = ($this->owner->ID == 0);
 	
@@ -54,7 +61,7 @@ class ClamAVExtension extends \DataExtension {
 			return;
 		}
 
-		$denyOnFailure = ClamAV::config()->deny_on_failure;
+		$denyOnFailure = ClamAV::config()->get('deny_on_failure');
 		$denyUpload = ($record->IsInfected || ($denyOnFailure && !$record->IsScanned));
 		// todo(Jake): Allow for custom deny rules with virus scan and TEST.
 		//$this->owner->extend('updateDeny', $denyUpload, $record, $validationResult);
@@ -123,7 +130,7 @@ class ClamAVExtension extends \DataExtension {
 		if ($this->_cache_scanForVirus !== 0) {
 			return $this->_cache_scanForVirus;
 		}
-		$record = singleton('SilbinaryWolf\SteamedClams\ClamAV')->scanFileRecordForVirus($this->owner);
+		$record = Injector::inst()->get('SilbinaryWolf\\SteamedClams\\ClamAV')->scanFileRecordForVirus($this->owner);
 		return $this->_cache_scanForVirus = $record;
 	}
 }

@@ -1,14 +1,17 @@
 <?php
 
 namespace SilbinaryWolf\SteamedClams;
+use DataObject;
+use GridField_ActionProvider;
+use GridField_ColumnProvider;
 use GridField_FormAction;
 use GridField;
-use Debug;
 use Controller;
+use Injector;
 use LogicException;
 use FieldList;
 
-class GridFieldClamAVAction implements \GridField_ColumnProvider, \GridField_ActionProvider {
+class GridFieldClamAVAction implements GridField_ColumnProvider, GridField_ActionProvider {
 	/**
 	 * @var ClamAV
 	 */
@@ -18,7 +21,7 @@ class GridFieldClamAVAction implements \GridField_ColumnProvider, \GridField_Act
 	 * {@inheritdoc}
 	 */
 	public function __construct() {
-		$this->clamAV = singleton('SilbinaryWolf\SteamedClams\ClamAV');
+		$this->clamAV = Injector::inst()->get('SilbinaryWolf\\SteamedClams\\ClamAV');
 	}
 
 	/**

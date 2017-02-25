@@ -4,8 +4,10 @@ namespace SilbinaryWolf\SteamedClams;
 use Config;
 use File;
 use Debug;
+use Injector;
 use LogicException;
 use DB;
+use QueuedJob;
 
 if (class_exists('AbstractQueuedJob')) {
 
@@ -50,12 +52,15 @@ class ClamAVScanJob extends \AbstractQueuedJob {
 		return 'ClamAV Virus Scan Task - Scan missed files';
 	}
 
-	public function getJobType() {
-		return \QueuedJob::QUEUED;
+    /**
+     * @return string
+     */
+    public function getJobType() {
+		return QueuedJob::QUEUED;
 	}
 
 	public function process() {
-		$task = singleton('SilbinaryWolf\SteamedClams\ClamAVScanTask');
+		$task = Injector::inst()->get('SilbinaryWolf\\SteamedClams\\ClamAVScanTask');
 		$task->run(null, $this);
 
 		$this->currentStep = 1;
@@ -74,7 +79,7 @@ class ClamAVScanJob extends \AbstractQueuedJob {
 	public function queueMyselfIfNeeded() {
 		// NOTE(Jake): Perhaps add '$cache' flag here to stop
 		// 			   thrashing in ClamAVScan::onAfterWrite()
-		$clamAV = singleton('SilbinaryWolf\SteamedClams\ClamAV');
+		$clamAV = Injector::inst()->get('SilbinaryWolf\\SteamedClams\\ClamAV');
 		$list = $clamAV->getFailedToScanFileList();
 		if (!$list || $list->count() == 0) {
 			return null;
@@ -99,7 +104,8 @@ class ClamAVScanJob extends \AbstractQueuedJob {
 
 		$class = get_class();
 		$nextJob = new $class();
-		$jobDescriptorID = singleton('QueuedJobService')->queueJob($nextJob, date('Y-m-d', time() + $repeat_time).' '.$time);
+		$job = Injector::inst()->get('QueuedJobService');
+		$jobDescriptorID = $job->queueJob($nextJob, date('Y-m-d', time() + $repeat_time).' '.$time);
 		return $jobDescriptorID;
 	}
 }

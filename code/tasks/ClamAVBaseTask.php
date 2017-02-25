@@ -1,11 +1,10 @@
 <?php
 
 namespace SilbinaryWolf\SteamedClams;
-use Config;
-use File;
+use Exception;
 use DB;
-use Debug;
-use LogicException;
+use Injector;
+use SS_Log;
 
 class ClamAVBaseTask extends \BuildTask {
 	/** 
@@ -14,7 +13,7 @@ class ClamAVBaseTask extends \BuildTask {
 	protected $clamAV;
 
 	/**
-	 * @var ClamAVJob
+	 * @var ClamAVScanJob
 	 */ 
 	protected $job;
 
@@ -27,7 +26,7 @@ class ClamAVBaseTask extends \BuildTask {
 
 	public function run($request, $job = null) {
 		// Check if online before starting
-		$this->clamAV = singleton('SilbinaryWolf\SteamedClams\ClamAV');
+		$this->clamAV = Injector::inst()->get('SilbinaryWolf\\SteamedClams\\ClamAV');
 		$this->job = $job;
 		$version = $this->clamAV->version();
 		if ($version === ClamAV::OFFLINE) {
@@ -229,7 +228,7 @@ class ClamAVBaseTask extends \BuildTask {
 		DB::alteration_message($errstr, 'error');
 
 		// Send out the error details to the logger for writing
-		\SS_Log::log(
+		SS_Log::log(
 			array(
 				'errno' => $errno,
 				'errstr' => $errstr,
@@ -237,7 +236,7 @@ class ClamAVBaseTask extends \BuildTask {
 				'errline' => $errline,
 				'errcontext' => $errcontext
 			),
-			\SS_Log::ERR
+			SS_Log::ERR
 		);
 	}
 }

@@ -1,14 +1,36 @@
 <?php
 
 namespace SilbinaryWolf\SteamedClams;
-use Debug;
+use Convert;
+use Exception;
+use File;
+use Injector;
 use LogicException;
 use HTMLText;
 use Member;
 use Controller;
-use Session;
 use Director;
+use Page;
 
+/**
+ * Class SilbinaryWolf\SteamedClams\ClamAVScan
+ *
+ * @property string $Filename
+ * @property string $ContextURL
+ * @property boolean $IsScanned
+ * @property boolean $IsInfected
+ * @property int $Action
+ * @property string $IPAddress
+ * @property string $RawData
+ * @property int $ContextPageID
+ * @property int $FileID
+ * @property int $MemberID
+ * @property int $ActionMemberID
+ * @method Page ContextPage()
+ * @method File File()
+ * @method Member Member()
+ * @method Member ActionMember()
+ */
 class ClamAVScan extends \DataObject {
 	// This *should not* be stored in DB, number order can be modified.
 	const STATE_INVALID = 0;
@@ -48,7 +70,7 @@ class ClamAVScan extends \DataObject {
 		'UserIdentifier' => 'User Identifier',
 		'FileID' => array(
 			'title' => 'File ID',
-			'callback' => array('SilbinaryWolf\SteamedClams\ClamAVScan', 'get_file_id_cms_link')
+			'callback' => array('SilbinaryWolf\\SteamedClams\\ClamAVScan', 'get_file_id_cms_link')
 		),
 		'Filename' => 'File Name',
 		'LocationUploaded' => 'Location Uploaded',
@@ -141,8 +163,8 @@ class ClamAVScan extends \DataObject {
 		if ($this->class !== __CLASS__) {
 			return;
 		}
-		if (class_exists('SilbinaryWolf\SteamedClams\ClamAVScanJob')) {
-			singleton('SilbinaryWolf\SteamedClams\ClamAVScanJob')->requireDefaultRecords();
+		if (class_exists('SilbinaryWolf\\SteamedClams\\ClamAVScanJob')) {
+			Injector::inst()->get('SilbinaryWolf\\SteamedClams\\ClamAVScanJob')->requireDefaultRecords();
 		}
 	}
 
@@ -233,8 +255,8 @@ class ClamAVScan extends \DataObject {
 			}
 		}
 		// Queue the job (if needed)
-		if (!$this->IsScanned && class_exists('SilbinaryWolf\SteamedClams\ClamAVScanJob')) {
-			singleton('SilbinaryWolf\SteamedClams\ClamAVScanJob')->queueMyselfIfNeeded();
+		if (!$this->IsScanned && class_exists('SilbinaryWolf\\SteamedClams\\ClamAVScanJob')) {
+			Injector::inst()->get('SilbinaryWolf\\SteamedClams\\ClamAVScanJob')->queueMyselfIfNeeded();
 		}
 	}
 
@@ -326,9 +348,10 @@ class ClamAVScan extends \DataObject {
 		return self::STATE_UNSCANNED;
 	}
 
-	/**
-	 * @var string
-	 */
+    /**
+     * @var string
+     * @return HTMLText|mixed|string
+     */
 	public function getLocationUploaded() {
 		//$getVars = explode('?', $this->ContextURL);
 		//$getVars = isset($getVar[1]) ? '?'.$getVar[1] : '';
@@ -344,9 +367,10 @@ class ClamAVScan extends \DataObject {
 		return $link;
 	}
 
-	/**
-	 * @return HTMLText
-	 */
+    /**
+     * @return HTMLText
+     * @throws Exception
+     */
 	public function getStateMessage() {
 		$colour = '#C00';
 		$text = '';
@@ -406,8 +430,13 @@ class ClamAVScan extends \DataObject {
 		if (!$file->exists() || !$file->canEdit()) {
 			return $fileID;
 		}
-		$cmsEditLink = Controller::join_links(singleton('SilbinaryWolf\SteamedClams\ClamAVAdmin')->Link(), 'SilbinaryWolf-SteamedClams-ClamAVScan', 'Assets', $fileID);
-		$result = new HTMLText('FileID');
+		$cmsEditLink = Controller::join_links(
+		    Injector::inst()->get('SilbinaryWolf\SteamedClams\ClamAVAdmin')->Link(),
+            'SilbinaryWolf-SteamedClams-ClamAVScan',
+            'Assets',
+            $fileID
+        );
+		$result = HTMLText::create('FileID');
 		$result->setValue($fileID);
 		$result->setValue($result->getValue().' <a href="'.$cmsEditLink.'">(Edit)</a>');
 		return $result;
@@ -428,7 +457,7 @@ class ClamAVScan extends \DataObject {
 	public function getRawData() {
 		$value = $this->getField('RawData');
 		if (is_string($value)) {
-			$value = json_decode($value, true);
+			$value = Convert::json2array($value, true);
 		}
 		return $value;
 	}
@@ -438,7 +467,7 @@ class ClamAVScan extends \DataObject {
 	 */
 	public function setRawData($value) {
 		if (is_array($value)) {
-			$value = json_encode($value);
+			$value = Convert::array2json($value);
 		}
 		$this->setField('RawData', $value);
 	}
@@ -457,11 +486,11 @@ class ClamAVScan extends \DataObject {
 	/**
 	 * {@inheritdoc}
 	 */
-	/*public function canDelete($member = null) {
+	public function canDelete($member = null) {
 		$extended = $this->extendedCan(__FUNCTION__, $member);
 		if($extended !== null) {
 			return $extended;
 		}
 		return false;
-	}*/
+	}
 }
