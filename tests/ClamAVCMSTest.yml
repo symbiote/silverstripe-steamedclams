@@ -1,0 +1,21 @@
+Group:
+  admin:
+    Title: Administrators
+Member:
+  admin:
+    Email: admin@example.com
+    Password: ZXXlkwecxz2390232233
+    Groups: =>Group.admin
+Permission:
+  admin:
+    Code: ADMIN
+    GroupID: =>Group.admin
+SilbinaryWolf\SteamedClams\ClamAVScan:
+  scan1:
+    Filename: '/home/www/mysite/testfile.txt'
+    # 'ContextURL' => 'Text',
+    # 'IsScanned'  => 'Boolean',
+    # 'IsInfected' => 'Boolean',
+    # 'Action'     => 'Int',
+    # 'IPAddress'  => 'Varchar(20)',
+    # 'RawData'    => 'Text',
