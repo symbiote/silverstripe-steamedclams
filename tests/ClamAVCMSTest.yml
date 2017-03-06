@@ -10,12 +10,12 @@ Permission:
   admin:
     Code: ADMIN
     GroupID: =>Group.admin
-SilbinaryWolf\SteamedClams\ClamAVScan:
-  scan1:
-    Filename: '/home/www/mysite/testfile.txt'
-    # 'ContextURL' => 'Text',
-    # 'IsScanned'  => 'Boolean',
-    # 'IsInfected' => 'Boolean',
-    # 'Action'     => 'Int',
-    # 'IPAddress'  => 'Varchar(20)',
-    # 'RawData'    => 'Text',
+# SilbinaryWolf\SteamedClams\ClamAVScan:
+#   scan1:
+#     Filename: '/home/www/mysite/testfile.txt'
+#     # 'ContextURL' => 'Text',
+#     # 'IsScanned'  => 'Boolean',
+#     # 'IsInfected' => 'Boolean',
+#     # 'Action'     => 'Int',
+#     # 'IPAddress'  => 'Varchar(20)',
+#     # 'RawData'    => 'Text',
