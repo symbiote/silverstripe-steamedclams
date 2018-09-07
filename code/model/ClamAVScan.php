@@ -1,6 +1,6 @@
 <?php
 
-namespace SilbinaryWolf\SteamedClams;
+namespace Symbiote\SteamedClams;
 
 use Convert;
 use DataObject;
@@ -15,7 +15,7 @@ use Director;
 use Page;
 
 /**
- * Class SilbinaryWolf\SteamedClams\ClamAVScan
+ * Class Symbiote\SteamedClams\ClamAVScan
  *
  * @property string $Filename
  * @property string $ContextURL
@@ -73,7 +73,7 @@ class ClamAVScan extends DataObject
         'UserIdentifier'   => 'User Identifier',
         'FileID'           => array(
             'title'    => 'File ID',
-            'callback' => array('SilbinaryWolf\\SteamedClams\\ClamAVScan', 'get_file_id_cms_link')
+            'callback' => array('Symbiote\\SteamedClams\\ClamAVScan', 'get_file_id_cms_link')
         ),
         'Filename'         => 'File Name',
         'LocationUploaded' => 'Location Uploaded',
@@ -169,8 +169,8 @@ class ClamAVScan extends DataObject
         if ($this->class !== __CLASS__) {
             return;
         }
-        if (class_exists('SilbinaryWolf\\SteamedClams\\ClamAVScanJob')) {
-            Injector::inst()->get('SilbinaryWolf\\SteamedClams\\ClamAVScanJob')->requireDefaultRecords();
+        if (class_exists('Symbiote\\SteamedClams\\ClamAVScanJob')) {
+            Injector::inst()->get('Symbiote\\SteamedClams\\ClamAVScanJob')->requireDefaultRecords();
         }
     }
 
@@ -263,8 +263,8 @@ class ClamAVScan extends DataObject
             }
         }
         // Queue the job (if needed)
-        if (!$this->IsScanned && class_exists('SilbinaryWolf\\SteamedClams\\ClamAVScanJob')) {
-            Injector::inst()->get('SilbinaryWolf\\SteamedClams\\ClamAVScanJob')->queueMyselfIfNeeded();
+        if (!$this->IsScanned && class_exists('Symbiote\\SteamedClams\\ClamAVScanJob')) {
+            Injector::inst()->get('Symbiote\\SteamedClams\\ClamAVScanJob')->queueMyselfIfNeeded();
         }
     }
 
@@ -462,8 +462,8 @@ class ClamAVScan extends DataObject
             return $fileID;
         }
         $cmsEditLink = Controller::join_links(
-            Injector::inst()->get('SilbinaryWolf\SteamedClams\ClamAVAdmin')->Link(),
-            'SilbinaryWolf-SteamedClams-ClamAVScan',
+            Injector::inst()->get('Symbiote\SteamedClams\ClamAVAdmin')->Link(),
+            'Symbiote-SteamedClams-ClamAVScan',
             'Assets',
             $fileID
         );

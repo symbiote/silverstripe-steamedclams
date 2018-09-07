@@ -7,7 +7,7 @@ nightly cron that scans the files or if you have queuedjobs installed, it will a
 # Composer Install
 
 ```
-composer require silbinarywolf/silverstripe-steamedclams:~1.1.0
+composer require symbiote/silverstripe-steamedclams:~1.1.0
 ```
 
 # Screenshots
@@ -39,7 +39,7 @@ LocalSocket /var/run/clamav/clamd.ctl
 (optional) You can use a different socket path, but you will need to change it in
 the config YML like below to match your clamd.conf:
 ```yml
-SilbinaryWolf\SteamedClams\ClamAV:
+Symbiote\SteamedClams\ClamAV:
   clamd:
     LocalSocket: '/var/run/clamav/clamd.ctl'
 ```
@@ -51,7 +51,7 @@ SilbinaryWolf\SteamedClams\ClamAV:
 # Configuration
 
 ```yml
-SilbinaryWolf\SteamedClams\ClamAV:
+Symbiote\SteamedClams\ClamAV:
   # Make this the same as your clamd.conf settings
   clamd:
     LocalSocket: '/var/run/clamav/clamd.ctl'
@@ -65,7 +65,7 @@ If you have the QueuedJobs module installed, you can configure when files missed
 This job will only queue if the daemon couldn't be connected to at the time that the file was uploaded.
 
 ```yml
-SilbinaryWolf\SteamedClams\ClamAVScanJob:
+Symbiote\SteamedClams\ClamAVScanJob:
   # This job will queue itself on dev/build by default if `File` records have been missed in scanning.
   disable_queue_on_devbuild: false
   # Repeat at daily by default (in seconds).
@@ -80,13 +80,13 @@ By running the task below, all files uploaded before installation of the module 
 scanned.
 
 ```
-/dev/tasks/SilbinaryWolf-SteamedClams-ClamAVInstallTask
+/dev/tasks/Symbiote-SteamedClams-ClamAVInstallTask
 ```
 
 To ignore certain files before a specific date, you can configure the datetime in your `YML` files, as below:
 
 ```yml
-SilbinaryWolf\SteamedClams\ClamAV:
+Symbiote\SteamedClams\ClamAV:
   initial_scan_ignore_before_datetime: '2015-06-06 00:00:00'
 ```
 
@@ -97,19 +97,19 @@ To emulate ClamAV results, put in your YML
 
 ```yml
 Injector:
-  SilbinaryWolf\SteamedClams\ClamAV:
-    class: SilbinaryWolf\SteamedClams\ClamAVEmulator
+  Symbiote\SteamedClams\ClamAV:
+    class: Symbiote\SteamedClams\ClamAVEmulator
 ```
 
 Then in your _config.php, switch between various testing modes:
 ```php
 <?php
 
-use SilbinaryWolf\SteamedClams\ClamAV;
-use SilbinaryWolf\SteamedClams\ClamAVEmulator;
+use Symbiote\SteamedClams\ClamAV;
+use Symbiote\SteamedClams\ClamAVEmulator;
 
 // Use this instead of YAML for quicker testing
-Config::inst()->update('Injector', 'SilbinaryWolf\SteamedClams\ClamAV', array('class' => 'SilbinaryWolf\SteamedClams\ClamAVEmulator'));
+Config::inst()->update('Injector', 'Symbiote\SteamedClams\ClamAV', array('class' => 'Symbiote\SteamedClams\ClamAVEmulator'));
 
 // If no virus found
 ClamAVEmulator::config()->mode = ClamAVEmulator::MODE_NO_VIRUS;
@@ -123,8 +123,8 @@ ClamAVEmulator::config()->mode = ClamAVEmulator::MODE_OFFLINE;
 
 # Supports
 - Silverstripe 3.2 and up (3.1 *should* work, create an issue if you determine otherwise)
-- [Versioned Files](https://github.com/silverstripe-australia/silverstripe-versionedfiles)
-- [CDN Content](https://github.com/silverstripe-australia/silverstripe-cdncontent)
+- [Versioned Files](https://github.com/symbiote/silverstripe-versionedfiles)
+- [CDN Content](https://github.com/symbiote/silverstripe-cdncontent)
 
 # Credits
 

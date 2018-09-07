@@ -10,7 +10,7 @@ Permission:
   admin:
     Code: ADMIN
     GroupID: =>Group.admin
-# SilbinaryWolf\SteamedClams\ClamAVScan:
+# Symbiote\SteamedClams\ClamAVScan:
 #   scan1:
 #     Filename: '/home/www/mysite/testfile.txt'
 #     # 'ContextURL' => 'Text',

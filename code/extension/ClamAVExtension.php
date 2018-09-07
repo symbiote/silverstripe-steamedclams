@@ -1,6 +1,6 @@
 <?php
 
-namespace SilbinaryWolf\SteamedClams;
+namespace Symbiote\SteamedClams;
 
 use DataExtension;
 use DataList;
@@ -11,7 +11,7 @@ use Injector;
 use ValidationResult;
 
 /**
- * Class SilbinaryWolf\SteamedClams\ClamAVExtension
+ * Class Symbiote\SteamedClams\ClamAVExtension
  *
  * @property File|ClamAVExtension $owner
  * @method DataList|ClamAVScan[] ClamAVScans()
@@ -19,7 +19,7 @@ use ValidationResult;
 class ClamAVExtension extends DataExtension
 {
     private static $has_many = array(
-        'ClamAVScans' => 'SilbinaryWolf\\SteamedClams\\ClamAVScan',
+        'ClamAVScans' => 'Symbiote\\SteamedClams\\ClamAVScan',
     );
 
     /**
@@ -138,7 +138,7 @@ class ClamAVExtension extends DataExtension
         if ($this->_cache_scanForVirus !== 0) {
             return $this->_cache_scanForVirus;
         }
-        $record = Injector::inst()->get('SilbinaryWolf\\SteamedClams\\ClamAV')->scanFileRecordForVirus($this->owner);
+        $record = Injector::inst()->get('Symbiote\\SteamedClams\\ClamAV')->scanFileRecordForVirus($this->owner);
 
         return $this->_cache_scanForVirus = $record;
     }

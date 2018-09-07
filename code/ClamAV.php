@@ -1,6 +1,6 @@
 <?php
 
-namespace SilbinaryWolf\SteamedClams;
+namespace Symbiote\SteamedClams;
 
 use Controller;
 use Config;

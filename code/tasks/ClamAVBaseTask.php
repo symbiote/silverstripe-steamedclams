@@ -1,6 +1,6 @@
 <?php
 
-namespace SilbinaryWolf\SteamedClams;
+namespace Symbiote\SteamedClams;
 
 use BuildTask;
 use Exception;
@@ -30,7 +30,7 @@ class ClamAVBaseTask extends BuildTask
     public function run($request, $job = null)
     {
         // Check if online before starting
-        $this->clamAV = Injector::inst()->get('SilbinaryWolf\\SteamedClams\\ClamAV');
+        $this->clamAV = Injector::inst()->get('Symbiote\\SteamedClams\\ClamAV');
         $this->job = $job;
         $version = $this->clamAV->version();
         if ($version === ClamAV::OFFLINE) {

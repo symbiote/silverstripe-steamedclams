@@ -1,6 +1,6 @@
 <?php
 
-namespace SilbinaryWolf\SteamedClams;
+namespace Symbiote\SteamedClams;
 
 use DataObject;
 use GridField_ActionProvider;
@@ -24,7 +24,7 @@ class GridFieldClamAVAction implements GridField_ColumnProvider, GridField_Actio
      */
     public function __construct()
     {
-        $this->clamAV = Injector::inst()->get('SilbinaryWolf\\SteamedClams\\ClamAV');
+        $this->clamAV = Injector::inst()->get('Symbiote\\SteamedClams\\ClamAV');
     }
 
     /**

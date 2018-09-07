@@ -1,6 +1,6 @@
 <?php
 
-use SilbinaryWolf\SteamedClams\ClamAVScan;
+use Symbiote\SteamedClams\ClamAVScan;
 
 if (class_exists('SS_Report')) {
 /**
@@ -65,7 +65,7 @@ class ClamAVScanReport extends SS_Report
         $fields = parent::getCMSFields();
 
         // Fix the export button so that it uses the columns defined below,
-        // instead of those from {@link SilbinaryWold\\SteamedClams\\ClamAVScan}
+        // instead of those from {@link Symbiote\\SteamedClams\\ClamAVScan}
         /** @var GridField $report */
         $report = $fields->dataFieldByName('Report');
         $report->getConfig()->getComponentByType('GridFieldExportButton')->setExportColumns($this->columns());

@@ -1,6 +1,6 @@
 <?php
 
-namespace SilbinaryWolf\SteamedClams;
+namespace Symbiote\SteamedClams;
 use AbstractQueuedJob;
 use Config;
 use Injector;
@@ -44,7 +44,7 @@ class ClamAVScanJob extends AbstractQueuedJob {
         parent::setup();
 
         // Recommended for long running jobs that don't increment 'currentStep'
-        // https://github.com/silverstripe-australia/silverstripe-queuedjobs
+        // https://github.com/symbiote/silverstripe-queuedjobs
         $this->currentStep = -1;
     }
 
@@ -63,7 +63,7 @@ class ClamAVScanJob extends AbstractQueuedJob {
 
     public function process()
     {
-        $task = Injector::inst()->get('SilbinaryWolf\\SteamedClams\\ClamAVScanTask');
+        $task = Injector::inst()->get('Symbiote\\SteamedClams\\ClamAVScanTask');
         $task->run(null, $this);
 
         $this->currentStep = 1;
@@ -85,7 +85,7 @@ class ClamAVScanJob extends AbstractQueuedJob {
     {
         // NOTE(Jake): Perhaps add '$cache' flag here to stop
         // 			   thrashing in ClamAVScan::onAfterWrite()
-        $clamAV = Injector::inst()->get('SilbinaryWolf\\SteamedClams\\ClamAV');
+        $clamAV = Injector::inst()->get('Symbiote\\SteamedClams\\ClamAV');
         $list = $clamAV->getFailedToScanFileList();
         if (!$list || $list->count() == 0) {
             return null;

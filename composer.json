@@ -1,5 +1,5 @@
 {
-    "name": "silbinarywolf/silverstripe-steamedclams",
+    "name": "symbiote/silverstripe-steamedclams",
     "description": "",
     "type": "silverstripe-module",
     "keywords": ["silverstripe"],
@@ -7,7 +7,7 @@
     "authors": [
     {
         "name": "Jake Bentvelzen",
-        "email": "jake@silverstripe.com.au"
+        "email": "jake@symbiote.com.au"
     }],
     "require": {
         "silverstripe/framework": "~3.2"
@@ -17,8 +17,11 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "1.0.x-dev"
+            "dev-master": "2.0.x-dev"
         },
         "installer-name": "steamedclams"
-    }
+    },
+	"replace": {
+		"silbinarywolf/silverstripe-steamedclams": "self.version"
+	}
 }

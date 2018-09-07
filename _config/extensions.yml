@@ -3,4 +3,4 @@ Name: steamedclams
 ---
 File:
   extensions:
-    ['SilbinaryWolf\SteamedClams\ClamAVExtension']
+    ['Symbiote\SteamedClams\ClamAVExtension']

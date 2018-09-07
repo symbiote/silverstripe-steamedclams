@@ -1,6 +1,6 @@
 <?php
 
-namespace SilbinaryWolf\SteamedClams;
+namespace Symbiote\SteamedClams;
 
 use File;
 use FunctionalTest;
@@ -27,7 +27,7 @@ class ClamAVCMSTest extends FunctionalTest
         $this->logInAs('admin');
 
         // Test ModelAdmin listing
-        $controller = singleton('SilbinaryWolf\SteamedClams\ClamAVAdmin');
+        $controller = singleton('Symbiote\SteamedClams\ClamAVAdmin');
         $response = $this->get($controller->Link());
     }
 
