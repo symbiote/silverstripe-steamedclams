@@ -57,6 +57,14 @@ class ClamAVBaseTask extends BuildTask
                 continue;
             }
             $logRecord = $file->scanForVirus();
+
+            // scans by a job/task will have an IPAddress of 127.0.0.1
+            $originalScan = $file->ClamAVScans()->sort('Created DESC')->first();
+            if (isset($originalScan) && isset($originalScan->IPAddress)) {
+                // replace 127.0.0.1 with original IPAddress
+                $logRecord->IPAddress = $originalScan->IPAddress;
+            }
+
             if ($logRecord === ClamAV::OFFLINE) {
                 $this->log('ClamAV daemon is offline.', 'error');
 
