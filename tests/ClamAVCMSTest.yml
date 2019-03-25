@@ -1,15 +1,15 @@
-Group:
+SilverStripe\Security\Group:
   admin:
     Title: Administrators
-Member:
+SilverStripe\Security\Member:
   admin:
     Email: admin@example.com
     Password: ZXXlkwecxz2390232233
-    Groups: =>Group.admin
-Permission:
+    Groups: =>SilverStripe\Security\Group.admin
+SilverStripe\Security\Permission:
   admin:
     Code: ADMIN
-    GroupID: =>Group.admin
+    GroupID: =>SilverStripe\Security\Group.admin
 # Symbiote\SteamedClams\ClamAVScan:
 #   scan1:
 #     Filename: '/home/www/mysite/testfile.txt'

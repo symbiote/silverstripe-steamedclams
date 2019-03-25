@@ -2,12 +2,10 @@
 
 namespace Symbiote\SteamedClams;
 
-use File;
-use FunctionalTest;
-use ValidationException;
-use Debug;
-use Controller;
-use Member;
+use SilverStripe\Dev\FunctionalTest;
+use Symbiote\SteamedClams\Admin\ClamAVAdmin;
+use SilverStripe\Reports\Report;
+use Symbiote\SteamedClams\Reports\ClamAVScanReport;
 
 /** 
  * Check various CMS areas of the ClamAV module and ensure it's not
@@ -27,19 +25,23 @@ class ClamAVCMSTest extends FunctionalTest
         $this->logInAs('admin');
 
         // Test ModelAdmin listing
-        $controller = singleton('Symbiote\SteamedClams\ClamAVAdmin');
+        $controller = singleton(ClamAVAdmin::class);
         $response = $this->get($controller->Link());
     }
 
+    /**
+     *
+     */
     public function testClamAVReport()
     {
-        if (!class_exists('SS_Report')) {
+        if (!class_exists(Report::class)) {
             return;
         }
+
         $this->logInAs('admin');
 
         // Test Report page
-        $controller = singleton('ClamAVScanReport');
+        $controller = singleton(ClamAVScanReport::class);
         $response = $this->get($controller->getLink());
     }
 }

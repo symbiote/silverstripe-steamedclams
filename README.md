@@ -18,18 +18,30 @@ composer require symbiote/silverstripe-steamedclams:~2.0
 
 # Quick Start
 
-1) Install ClamAV
-
-2) Setup socket permissions
+1) Install ClamAV in ubuntu.
+```
+sudo apt install clamav clamav-daemon
+```
+run ``` sudo apt-get install apt-get update``` when necessary.
+2) Start clamav-daemon - Please wait 2 minutes between two command.
+```
+sudo service clamav-freshclam restart
+sudo service clamav-daemon start
+```
+And check that the clamav-daemon is running.
+```
+ sudo service clamav-daemon status
+```
+3) Setup socket permissions
 NOTE: I am by no means a *nix/server expert, but this is what I did to get it going.
+The clamav-daemon creates this /var/run/clamav/clamd.ctl if not.
 ```
 sudo mkdir /var/run/clamav
 sudo chown -R defaultsite:defaultsite /var/run/clamav
-clamd
 ```
 * 'defaultsite' being the user and group that has ownership.
 
-3) Configure clamd.conf:
+4) Configure clamd.conf:
 ```
 # Path to a local socket file the daemon will listen on.
 # Default: disabled (must be specified by a user)
@@ -44,9 +56,10 @@ Symbiote\SteamedClams\ClamAV:
     LocalSocket: '/var/run/clamav/clamd.ctl'
 ```
 
-4) After running dev/build, all files should scan for viruses automatically during uploading / validation.
+5) After running dev/build?flush, all files should scan for viruses automatically during uploading / validation. 
+If you are using 
 
-5) To check to see if it's running properly, it should show that it's ONLINE at: http://{mysite.com}/admin/clamav
+6) To check to see if it's running properly, it should show that it's ONLINE at: http://{mysite.com}/admin/clamav
 
 # Configuration
 
