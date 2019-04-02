@@ -13,6 +13,7 @@ use SilverStripe\ORM\ValidationResult;
 use Symbiote\SteamedClams\ClamAV;
 use Symbiote\SteamedClams\Model\ClamAVScan;
 use SilverStripe\Core\Config\Config;
+use Silverstripe\SiteConfig\SiteConfig;
 
 /**
  * Class Symbiote\SteamedClams\ClamAVExtension
@@ -89,10 +90,14 @@ class ClamAVExtension extends DataExtension
             return;
         }
 
+        $config = SiteConfig::current_site_config();
+
+        $validationMessage = ($config->ValidationMessage) ? $config->ValidationMessage : 'A virus was detected.';
+
         $validationResult->addError(
             _t(
                 'ClamAV.VIRUS_DETECTED',
-                'A virus was detected.'
+                $validationMessage
             ),
             'VIRUS'
         );
