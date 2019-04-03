@@ -84,10 +84,9 @@ class ClamAV
     {
         $isFileMaybeExternal = false;
         $fileMetaData = $file->File->getMetadata();
-        $filepath = ASSETS_PATH . '/' . Config::inst()->get(ProtectedAssetAdapter::class, 'secure_folder')
-            . '/' . $fileMetaData['path'];
+        $filepath = $file->getFullPath();
 
-        if (!$file->File->exists()) {
+        if (!file_exists($filepath)) {
             // If file can't be found, attempt to download
             // from external CDN or similar.
             $isFileMaybeExternal = true;

@@ -132,13 +132,7 @@ class ClamAVExtension extends DataExtension
             return null;
         }
 
-        if ($this->_cache_scanForVirus !== 0) {
-            return $this->_cache_scanForVirus;
-        }
-
-        $record = Injector::inst()->get(ClamAV::class)->scanFileRecordForVirus($this->owner);
-
-        return $this->_cache_scanForVirus = $record;
+        return Injector::inst()->get(ClamAV::class)->scanFileRecordForVirus($this->owner);
     }
 
     /**
@@ -167,8 +161,12 @@ class ClamAVExtension extends DataExtension
     {
         $fileMetaData = $this->owner->File->getMetadata();
 
-        return ASSETS_PATH . '/' . Config::inst()->get(ProtectedAssetAdapter::class, 'secure_folder')
-            . '/' . $fileMetaData['path'];
+        if ($this->owner->isPublished()) {
+            return PUBLIC_PATH . $this->owner->File->getURL();
+        } else {
+            return ASSETS_PATH . '/' . Config::inst()->get(ProtectedAssetAdapter::class, 'secure_folder')
+                . '/' . $fileMetaData['path'];
+        }
     }
 
     /**
