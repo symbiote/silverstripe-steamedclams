@@ -65,7 +65,7 @@ class ClamAVAdmin extends ModelAdmin
         if (!$id) {
             return $this->redirect($this->Link());
         }
-        $assetAdmin = singleton('AssetAdmin');
+        $assetAdmin = singleton(AssetAdmin::class);
         if (!$assetAdmin->canView()) {
             return $this->redirect($this->Link());
         }

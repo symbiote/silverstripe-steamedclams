@@ -18,28 +18,29 @@ composer require symbiote/silverstripe-steamedclams:~2.0
 
 # Quick Start
 
-1) Install ClamAV in ubuntu.
+1) Install ClamAV in Unix/Linux.
 ```
 sudo apt install clamav clamav-daemon
 ```
 run ``` sudo apt-get install apt-get update``` when necessary.
+
 2) Start clamav-daemon - Please wait 2 minutes between two command.
 ```
 sudo service clamav-freshclam restart
 sudo service clamav-daemon start
 ```
-And check that the clamav-daemon is running.
+And check the clamav-daemon is running.
 ```
  sudo service clamav-daemon status
 ```
+
 3) Setup socket permissions
-NOTE: I am by no means a *nix/server expert, but this is what I did to get it going.
 The clamav-daemon creates this /var/run/clamav/clamd.ctl if not.
 ```
 sudo mkdir /var/run/clamav
-sudo chown -R defaultsite:defaultsite /var/run/clamav
+sudo chown -R user:group /var/run/clamav
 ```
-* 'defaultsite' being the user and group that has ownership.
+'defaultsite' being the user and group that has ownership.
 
 4) Configure clamd.conf:
 ```
@@ -135,11 +136,11 @@ ClamAVEmulator::config()->mode = ClamAVEmulator::MODE_OFFLINE;
 ```
 
 # Supports
-- Silverstripe 3.2 and up (3.1 *should* work, create an issue if you determine otherwise)
+- Silverstripe 4.0 and up 
 - [Versioned Files](https://github.com/symbiote/silverstripe-versionedfiles)
 - [CDN Content](https://github.com/symbiote/silverstripe-cdncontent)
+- For Silverstripe 3.2 and up (3.1 *should* work, create an issue if you determine otherwise) use 1.0
 
 # Credits
-
 [Barakat S](https://github.com/FileZ/php-clamd) for clamd PHP interface
 ["How to Forge" users](https://web.archive.org/web/20161124000346/https://www.howtoforge.com/community/threads/clamd-will-not-start.34559/) for fixing permission issues

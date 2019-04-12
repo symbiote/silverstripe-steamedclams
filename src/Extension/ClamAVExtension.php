@@ -159,12 +159,17 @@ class ClamAVExtension extends DataExtension
      */
     public function getFullPath()
     {
+        if (!isset($this->owner->File)) {
+            return null;
+        }
+
         $fileMetaData = $this->owner->File->getMetadata();
 
         if ($this->owner->isPublished()) {
             return PUBLIC_PATH . $this->owner->File->getURL();
         } else {
-            return ASSETS_PATH . '/' . Config::inst()->get(ProtectedAssetAdapter::class, 'secure_folder')
+            return ASSETS_PATH . '/' .
+                Config::inst()->get(ProtectedAssetAdapter::class, 'secure_folder')
                 . '/' . $fileMetaData['path'];
         }
     }

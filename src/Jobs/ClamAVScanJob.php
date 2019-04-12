@@ -9,6 +9,7 @@ use Symbiote\QueuedJobs\Services\AbstractQueuedJob;
 use Symbiote\QueuedJobs\Services\QueuedJob;
 use Symbiote\SteamedClams\ClamAV;
 use Symbiote\SteamedClams\Tasks\ClamAVScanTask;
+use Symbiote\QueuedJobs\Services\QueuedJobService;
 
 if (class_exists(AbstractQueuedJob::class)) {
 
@@ -123,7 +124,7 @@ if (class_exists(AbstractQueuedJob::class)) {
 
             $class = get_class();
             $nextJob = new $class();
-            $job = Injector::inst()->get('QueuedJobService');
+            $job = Injector::inst()->get(QueuedJobService::class);
             $jobDescriptorID = $job->queueJob($nextJob, date('Y-m-d', time() + $repeat_time) . ' ' . $time);
 
             return $jobDescriptorID;
