@@ -7,14 +7,14 @@ use Config;
 use File;
 use Debug;
 use LogicException;
-use Object;
+use SS_Object;
 use SS_Log;
 use Injector;
 use ArrayList;
 use SS_Datetime;
 use Director;
 
-class ClamAV extends Object
+class ClamAV extends SS_Object
 {
     const MODULE_DIR = 'steamedclams';
 
