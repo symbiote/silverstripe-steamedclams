@@ -24,9 +24,10 @@ sudo apt install clamav clamav-daemon
 ```
 run ``` sudo apt-get install apt-get update``` when necessary.
 
-2) Start clamav-daemon - Please wait 2 minutes between two command.
+2) Start clamav-daemon
 ```
 sudo service clamav-freshclam restart
+# wait ~2 minutes
 sudo service clamav-daemon start
 ```
 And check the clamav-daemon is running.
