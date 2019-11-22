@@ -205,7 +205,7 @@ class ClamAV
 
         $result = null;
         if (class_exists(Injector::class)) {
-            $result = Injector::inst()->create('ClamdPipe');
+            $result = Injector::inst()->create(\ClamdPipe::class);
         } else {
             $result = new \ClamdPipe;
         }

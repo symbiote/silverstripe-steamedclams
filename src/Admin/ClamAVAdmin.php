@@ -16,6 +16,7 @@ use SilverStripe\View\Requirements;
 use Symbiote\SteamedClams\ClamAV;
 use Symbiote\SteamedClams\Forms\GridFieldClamAVAction;
 use Symbiote\SteamedClams\Model\ClamAVScan;
+use SilverStripe\AssetAdmin\Controller\AssetAdmin;
 
 /**
  * Class Symbiote\SteamedClams\ClamAVAdmin
