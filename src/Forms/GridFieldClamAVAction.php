@@ -1,16 +1,18 @@
 <?php
 
-namespace Symbiote\SteamedClams;
+namespace Symbiote\SteamedClams\Forms;
 
-use DataObject;
-use GridField_ActionProvider;
-use GridField_ColumnProvider;
-use GridField_FormAction;
-use GridField;
-use Controller;
-use Injector;
 use LogicException;
-use FieldList;
+use SilverStripe\Control\Controller;
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\Forms\FieldList;
+use SilverStripe\Forms\GridField\GridField;
+use SilverStripe\Forms\GridField\GridField_ActionProvider;
+use SilverStripe\Forms\GridField\GridField_ColumnProvider;
+use SilverStripe\Forms\GridField\GridField_FormAction;
+use SilverStripe\ORM\DataObject;
+use Symbiote\SteamedClams\ClamAV;
+use Symbiote\SteamedClams\Model\ClamAVScan;
 
 class GridFieldClamAVAction implements GridField_ColumnProvider, GridField_ActionProvider
 {
@@ -24,7 +26,7 @@ class GridFieldClamAVAction implements GridField_ColumnProvider, GridField_Actio
      */
     public function __construct()
     {
-        $this->clamAV = Injector::inst()->get('Symbiote\\SteamedClams\\ClamAV');
+        $this->clamAV = Injector::inst()->get(ClamAV::class);
     }
 
     /**
@@ -42,7 +44,7 @@ class GridFieldClamAVAction implements GridField_ColumnProvider, GridField_Actio
      */
     public function getColumnAttributes($gridField, $record, $columnName)
     {
-        return array('class' => 'clamav-buttons');
+        return ['class' => 'clamav-buttons'];
     }
 
     /**
@@ -50,7 +52,7 @@ class GridFieldClamAVAction implements GridField_ColumnProvider, GridField_Actio
      */
     public function getColumnMetadata($gridField, $columnName)
     {
-        return array('title' => '');
+        return ['title' => ''];
     }
 
     /**
@@ -58,21 +60,14 @@ class GridFieldClamAVAction implements GridField_ColumnProvider, GridField_Actio
      */
     public function getColumnsHandled($gridField)
     {
-        return array('Actions');
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getActions($gridField)
-    {
-        return array('clamav_ignore', 'clamav_scan');
+        return ['Actions'];
     }
 
     /**
      * @param GridField $gridField
      * @param DataObject $record
      * @param string $columnName
+     *
      * @return string - the HTML for the column
      */
     public function getColumnContent($gridField, $record, $columnName)
@@ -91,7 +86,7 @@ class GridFieldClamAVAction implements GridField_ColumnProvider, GridField_Actio
                         'clamav_scan' . $record->ID,
                         'Scan',
                         'clamav_scan',
-                        array('RecordID' => $record->ID)
+                        ['RecordID' => $record->ID]
                     );
                     $field->addExtraClass('ss-ui-action-constructive clamav-button');
                     if ($this->clamAV->isOffline()) {
@@ -105,7 +100,7 @@ class GridFieldClamAVAction implements GridField_ColumnProvider, GridField_Actio
                         'clamav_ignore' . $record->ID,
                         'Ignore',
                         'clamav_ignore',
-                        array('RecordID' => $record->ID)
+                        ['RecordID' => $record->ID]
                     );
                     $field->addExtraClass('clamav-delete-button clamav-button');
                     $fieldList->push($field);
@@ -143,6 +138,7 @@ class GridFieldClamAVAction implements GridField_ColumnProvider, GridField_Actio
      * @param string $actionName
      * @param mixed $arguments
      * @param array $data - form data
+     *
      * @return void
      */
     public function handleAction(GridField $gridField, $actionName, $arguments, $data)
@@ -189,7 +185,17 @@ class GridFieldClamAVAction implements GridField_ColumnProvider, GridField_Actio
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function getActions($gridField)
+    {
+        return ['clamav_ignore', 'clamav_scan'];
+    }
+
+    /**
      * Notify end user of the result of an action
+     *
+     * @param string $message
      *
      * @return boolean
      */

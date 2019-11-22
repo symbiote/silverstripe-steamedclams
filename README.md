@@ -18,18 +18,32 @@ composer require symbiote/silverstripe-steamedclams:~2.0
 
 # Quick Start
 
-1) Install ClamAV
+1) Install ClamAV in Unix/Linux.
+```
+sudo apt install clamav clamav-daemon
+```
+run ``` sudo apt-get install apt-get update``` when necessary.
 
-2) Setup socket permissions
-NOTE: I am by no means a *nix/server expert, but this is what I did to get it going.
+2) Start clamav-daemon
+```
+sudo service clamav-freshclam restart
+# wait ~2 minutes
+sudo service clamav-daemon start
+```
+And check the clamav-daemon is running.
+```
+ sudo service clamav-daemon status
+```
+
+3) Setup socket permissions
+The clamav-daemon creates this /var/run/clamav/clamd.ctl if not.
 ```
 sudo mkdir /var/run/clamav
-sudo chown -R defaultsite:defaultsite /var/run/clamav
-clamd
+sudo chown -R user:group /var/run/clamav
 ```
-* 'defaultsite' being the user and group that has ownership.
+'defaultsite' being the user and group that has ownership.
 
-3) Configure clamd.conf:
+4) Configure clamd.conf:
 ```
 # Path to a local socket file the daemon will listen on.
 # Default: disabled (must be specified by a user)
@@ -44,9 +58,10 @@ Symbiote\SteamedClams\ClamAV:
     LocalSocket: '/var/run/clamav/clamd.ctl'
 ```
 
-4) After running dev/build, all files should scan for viruses automatically during uploading / validation.
+5) After running dev/build?flush, all files should scan for viruses automatically during uploading / validation. 
+If you are using 
 
-5) To check to see if it's running properly, it should show that it's ONLINE at: http://{mysite.com}/admin/clamav
+6) To check to see if it's running properly, it should show that it's ONLINE at: http://{mysite.com}/admin/clamav
 
 # Configuration
 
@@ -122,11 +137,11 @@ ClamAVEmulator::config()->mode = ClamAVEmulator::MODE_OFFLINE;
 ```
 
 # Supports
-- Silverstripe 3.2 and up (3.1 *should* work, create an issue if you determine otherwise)
+- Silverstripe 4.0 and up 
 - [Versioned Files](https://github.com/symbiote/silverstripe-versionedfiles)
 - [CDN Content](https://github.com/symbiote/silverstripe-cdncontent)
+- For Silverstripe 3.2 and up (3.1 *should* work, create an issue if you determine otherwise) use 1.0
 
 # Credits
-
 [Barakat S](https://github.com/FileZ/php-clamd) for clamd PHP interface
 ["How to Forge" users](https://web.archive.org/web/20161124000346/https://www.howtoforge.com/community/threads/clamd-will-not-start.34559/) for fixing permission issues

@@ -2,10 +2,8 @@
 
 namespace Symbiote\SteamedClams;
 
-use Config;
-use File;
-use Debug;
 use LogicException;
+use SilverStripe\Core\Config\Config;
 
 /**
  * For emulating/faking ClamAV results
@@ -41,6 +39,7 @@ class ClamAVEmulator extends ClamAV
     public function version()
     {
         $mode = Config::inst()->get(__CLASS__, 'mode');
+        $emulateVersion = Config::inst()->get(__CLASS__, 'emulate_version');
         switch ($mode) {
             case self::MODE_UNKNOWN:
                 return $this->modeUnknown();
@@ -48,7 +47,7 @@ class ClamAVEmulator extends ClamAV
 
             case self::MODE_NO_VIRUS:
             case self::MODE_HAS_VIRUS:
-                return $this->config()->emulate_version;
+                return $emulateVersion;
                 break;
 
             case self::MODE_OFFLINE:
@@ -103,15 +102,19 @@ class ClamAVEmulator extends ClamAV
 
     protected function modeOffline()
     {
-        $this->last_exception = new \ClamdSocketException('*EMULATE MODE* No such file or directory "/not-real-root-folder/run/clamav/clamd.ctl"',
-            2);
+        $this->last_exception = new \ClamdSocketException(
+            '*EMULATE MODE* No such file or directory "/not-real-root-folder/run/clamav/clamd.ctl"',
+            2
+        );
 
         return self::OFFLINE;
     }
 
     protected function modeInvalid()
     {
-        throw new LogicException('Invalid "mode" config with value "' . Config::inst()->get(__CLASS__,
-                'mode') . '". Use constants provided in ' . __CLASS__ . ' class.');
+        throw new LogicException(
+            'Invalid "mode" config with value "' . Config::inst()->get(__CLASS__, 'mode')
+            . '". Use constants provided in ' . __CLASS__ . ' class.'
+        );
     }
 }

@@ -1,14 +1,19 @@
 <?php
 
-namespace Symbiote\SteamedClams;
+namespace Symbiote\SteamedClams\Extension;
 
-use DataExtension;
-use DataList;
-use File;
-use Folder;
-use DataObject;
-use Injector;
-use ValidationResult;
+use SilverStripe\Assets\File;
+use SilverStripe\Assets\Flysystem\ProtectedAssetAdapter;
+use SilverStripe\Assets\Folder;
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\ORM\DataExtension;
+use SilverStripe\ORM\DataList;
+use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\ValidationResult;
+use Symbiote\SteamedClams\ClamAV;
+use Symbiote\SteamedClams\Model\ClamAVScan;
+use SilverStripe\Core\Config\Config;
+use Silverstripe\SiteConfig\SiteConfig;
 
 /**
  * Class Symbiote\SteamedClams\ClamAVExtension
@@ -18,9 +23,12 @@ use ValidationResult;
  */
 class ClamAVExtension extends DataExtension
 {
-    private static $has_many = array(
-        'ClamAVScans' => 'Symbiote\\SteamedClams\\ClamAVScan',
-    );
+    /**
+     * @var array
+     */
+    private static $has_many = [
+        'ClamAVScans' => ClamAVScan::class,
+    ];
 
     /**
      * @var ClamAVScan
@@ -38,7 +46,9 @@ class ClamAVExtension extends DataExtension
      * This is called within `File::write()` but before `File::onBeforeWrite()`.
      *
      * @param ValidationResult $validationResult
+     *
      * @return null
+     * @throws \SilverStripe\ORM\ValidationException
      */
     public function validate(ValidationResult $validationResult)
     {
@@ -48,7 +58,8 @@ class ClamAVExtension extends DataExtension
         // Support VersionedFiles module
         // ie. If file has been replaced, scan it.
         $changedFields = $this->owner->getChangedFields(true, DataObject::CHANGE_VALUE);
-        $currentVersionIDChanged = (isset($changedFields['CurrentVersionID'])) ? $changedFields['CurrentVersionID'] : array();
+        $currentVersionIDChanged = (isset($changedFields['CurrentVersionID'])) ? $changedFields['CurrentVersionID'] : [];
+
         if ($currentVersionIDChanged && $currentVersionIDChanged['before'] != $currentVersionIDChanged['after']) {
             $doVirusScan = true;
         }
@@ -61,11 +72,13 @@ class ClamAVExtension extends DataExtension
         }
 
         $record = $this->owner->scanForVirus();
+
         if (!$record) {
             return;
         }
 
         $denyOnFailure = ClamAV::config()->get('deny_on_failure');
+
         $denyUpload = ($record->IsInfected || ($denyOnFailure && !$record->IsScanned));
         // todo(Jake): Allow for custom deny rules with virus scan and TEST.
         //$this->owner->extend('updateDeny', $denyUpload, $record, $validationResult);
@@ -76,10 +89,15 @@ class ClamAVExtension extends DataExtension
 
             return;
         }
-        $validationResult->error(
+
+        $config = SiteConfig::current_site_config();
+
+        $validationMessage = ($config->ValidationMessage) ? $config->ValidationMessage : 'A virus was detected.';
+
+        $validationResult->addError(
             _t(
                 'ClamAV.VIRUS_DETECTED',
-                'A virus was detected.'
+                $validationMessage
             ),
             'VIRUS'
         );
@@ -88,6 +106,7 @@ class ClamAVExtension extends DataExtension
         // (If file hasn't been written to DB yet)
         if ($this->owner->ID == 0) {
             $filepath = $this->owner->getFullPath();
+
             if (file_exists($filepath)) {
                 @unlink($filepath);
             }
@@ -102,11 +121,18 @@ class ClamAVExtension extends DataExtension
         }
     }
 
-    public function onAfterDelete()
+    /**
+     * Returns an unsaved `ClamAVScan` record with information regarding the virus scan
+     *
+     * @return ClamAVScan
+     */
+    public function scanForVirus()
     {
-        foreach ($this->owner->ClamAVScans() as $scan) {
-            $scan->processFileActionDelete();
+        if (!$this->isVirusScannable()) {
+            return null;
         }
+
+        return Injector::inst()->get(ClamAV::class)->scanFileRecordForVirus($this->owner);
     }
 
     /**
@@ -120,26 +146,41 @@ class ClamAVExtension extends DataExtension
             return false;
         }
         // NOTE(Jake): Perhaps add $this->owner->extend() here? Maybe you want to avoid scanning
-        //			   2GB files or similar? But maybe we want a different function that works
-        //		 	   like ::validate(). Too early to say.
+        // 2GB files or similar? But maybe we want a different function that works
+        // like ::validate(). Too early to say.
         return true;
     }
 
     /**
-     * Returns an unsaved `ClamAVScan` record with information regarding the virus scan
+     * Returns an absolute filesystem path to the file.
+     * Use {@link getRelativePath()} to get the same path relative to the webroot.
      *
-     * @return ClamAVScan
+     * @return String
      */
-    public function scanForVirus()
+    public function getFullPath()
     {
-        if (!$this->isVirusScannable()) {
+        if (!isset($this->owner->File)) {
             return null;
         }
-        if ($this->_cache_scanForVirus !== 0) {
-            return $this->_cache_scanForVirus;
-        }
-        $record = Injector::inst()->get('Symbiote\\SteamedClams\\ClamAV')->scanFileRecordForVirus($this->owner);
 
-        return $this->_cache_scanForVirus = $record;
+        $fileMetaData = $this->owner->File->getMetadata();
+
+        if ($this->owner->isPublished()) {
+            return PUBLIC_PATH . $this->owner->File->getURL();
+        } else {
+            return ASSETS_PATH . '/' .
+                Config::inst()->get(ProtectedAssetAdapter::class, 'secure_folder')
+                . '/' . $fileMetaData['path'];
+        }
+    }
+
+    /**
+     * @throws \SilverStripe\ORM\ValidationException
+     */
+    public function onAfterDelete()
+    {
+        foreach ($this->owner->ClamAVScans() as $scan) {
+            $scan->processFileActionDelete();
+        }
     }
 }

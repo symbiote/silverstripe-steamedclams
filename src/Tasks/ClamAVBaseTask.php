@@ -1,12 +1,15 @@
 <?php
 
-namespace Symbiote\SteamedClams;
+namespace Symbiote\SteamedClams\Tasks;
 
-use BuildTask;
 use Exception;
-use DB;
-use Injector;
-use SS_Log;
+use Psr\Log\LoggerInterface;
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\Dev\BuildTask;
+use SilverStripe\ORM\DataList;
+use SilverStripe\ORM\DB;
+use Symbiote\SteamedClams\ClamAV;
+use Symbiote\SteamedClams\Jobs\ClamAVScanJob;
 
 class ClamAVBaseTask extends BuildTask
 {
@@ -30,7 +33,7 @@ class ClamAVBaseTask extends BuildTask
     public function run($request, $job = null)
     {
         // Check if online before starting
-        $this->clamAV = Injector::inst()->get('Symbiote\\SteamedClams\\ClamAV');
+        $this->clamAV = Injector::inst()->get(ClamAV::class);
         $this->job = $job;
         $version = $this->clamAV->version();
         if ($version === ClamAV::OFFLINE) {
@@ -42,96 +45,14 @@ class ClamAVBaseTask extends BuildTask
         return true;
     }
 
-    protected function scanList($list)
-    {
-        foreach ($list as $file) {
-            // Skip `Folder` type
-            if (!$file->isVirusScannable()) {
-                $this->log('Cannot scan this type, skipping ' . $file->ClassName . ' #' . $file->ID . '.');
-                continue;
-            }
-
-            $path = $file->getFullPath();
-            if (!$path) {
-                $this->log('Skipping ' . $file->ClassName . ' #' . $file->ID . ', no path on record. getFullPath = "' . $path . '"');
-                continue;
-            }
-            $logRecord = $file->scanForVirus();
-
-            // scans by a job/task will have an IPAddress of 127.0.0.1
-            $originalScan = $file->ClamAVScans()->sort('Created DESC')->first();
-            if (isset($originalScan) && isset($originalScan->IPAddress)) {
-                // replace 127.0.0.1 with original IPAddress
-                $logRecord->IPAddress = $originalScan->IPAddress;
-            }
-
-            if ($logRecord === ClamAV::OFFLINE) {
-                $this->log('ClamAV daemon is offline.', 'error');
-
-                return false;
-            }
-            if (!$logRecord) {
-                $this->log('Skipping ' . $file->ClassName . ' #' . $file->ID . '. File doesn\'t exist.');
-                continue;
-            }
-            if ($logRecord->IsInfected) {
-                $this->log($file->ClassName . ' #' . $file->ID . ' has a virus.', 'error');
-            } else {
-                $this->log($file->ClassName . ' #' . $file->ID . ' is clean.', 'created');
-            }
-            $logRecord->write();
-        }
-
-        return true;
-    }
-
     /**
-     * Scan files "bit-by-bit" to avoid filling up and blowing low memory limits
-     */
-    protected function scanListChunked($list, $limit = null, $chunkSize = 100)
-    {
-        if ($limit === null && $this->default_limit > 0) {
-            $limit = $this->default_limit;
-        }
-
-        $totalCount = $list->count();
-        if ($limit > 0) {
-            if ($limit > $totalCount) {
-                $limit = $totalCount;
-            }
-            if ($chunkSize > $limit) {
-                $chunkSize = $limit;
-            }
-            $totalCount = $limit;
-        }
-
-        $offset = 0;
-        while ($offset < $totalCount) {
-            $subList = $list->limit($chunkSize, $offset);
-            $offset += $chunkSize;
-            if ($this->scanList($subList) === false) {
-                return false;
-            }
-            gc_collect_cycles();
-        }
-
-        return true;
-    }
-
-    /**
-     * Hide this base task
+     * @param $messageOrDataObject
+     * @param string $type
+     * @param \Exception|null $exception
+     * @param int $indent
      *
-     * @return boolean
+     * @throws \Exception
      */
-    public function isEnabled()
-    {
-        if ($this->class === __CLASS__) {
-            return false;
-        }
-
-        return parent::isEnabled();
-    }
-
     protected function log($messageOrDataObject, $type = '', Exception $exception = null, $indent = 0)
     {
         $message = '';
@@ -207,7 +128,8 @@ class ClamAVBaseTask extends BuildTask
             $message .= $messageOrDataObject;
         }
         if ($exception) {
-            $message .= ' -- ' . $exception->getMessage() . ' -- File: ' . basename($exception->getFile()) . ' -- Line ' . $exception->getLine();
+            $message .= ' -- ' . $exception->getMessage() . ' -- File: ' .
+                basename($exception->getFile()) . ' -- Line ' . $exception->getLine();
         }
 
         switch ($type) {
@@ -220,7 +142,7 @@ class ClamAVBaseTask extends BuildTask
                 break;
 
             case 'error':
-                set_error_handler(array($this, 'log_error_handler'));
+                set_error_handler([$this, 'log_error_handler']);
                 user_error($message, E_USER_WARNING);
                 restore_error_handler();
                 break;
@@ -243,21 +165,115 @@ class ClamAVBaseTask extends BuildTask
     /**
      * Custom error handler so that 'user_error' underneath the 'log' function just prints
      * like everything else.
+     *
+     * @param $errno
+     * @param $errstr
+     * @param $errfile
+     * @param $errline
+     * @param $errcontext
      */
     public function log_error_handler($errno, $errstr, $errfile, $errline, $errcontext)
     {
         DB::alteration_message($errstr, 'error');
 
         // Send out the error details to the logger for writing
-        SS_Log::log(
-            array(
-                'errno'      => $errno,
-                'errstr'     => $errstr,
-                'errfile'    => $errfile,
-                'errline'    => $errline,
-                'errcontext' => $errcontext
-            ),
-            SS_Log::ERR
-        );
+        $error = [
+            'errno'      => $errno,
+            'errstr'     => $errstr,
+            'errfile'    => $errfile,
+            'errline'    => $errline,
+            'errcontext' => $errcontext,
+        ];
+        Injector::inst()->get(LoggerInterface::class)
+            ->error('Query executed: ' . implode(',', $error));
+    }
+
+    /**
+     * Scan files "bit-by-bit" to avoid filling up and blowing low memory limits
+     *
+     * @param DataList $list
+     * @param int $limit
+     * @param int $chunkSize
+     *
+     * @return bool
+     * @throws \Exception
+     */
+    protected function scanListChunked($list, $limit = null, $chunkSize = 100)
+    {
+        if ($limit === null && $this->default_limit > 0) {
+            $limit = $this->default_limit;
+        }
+
+        $totalCount = $list->count();
+        if ($limit > 0) {
+            if ($limit > $totalCount) {
+                $limit = $totalCount;
+            }
+            if ($chunkSize > $limit) {
+                $chunkSize = $limit;
+            }
+            $totalCount = $limit;
+        }
+
+        $offset = 0;
+        while ($offset < $totalCount) {
+            $subList = $list->limit($chunkSize, $offset);
+            $offset += $chunkSize;
+            if ($this->scanList($subList) === false) {
+                return false;
+            }
+            gc_collect_cycles();
+        }
+
+        return true;
+    }
+
+    /**
+     * @param DataList $list
+     *
+     * @return bool
+     * @throws \Exception
+     */
+    protected function scanList($list)
+    {
+        foreach ($list as $file) {
+            // Skip `Folder` type
+            if (!$file->isVirusScannable()) {
+                $this->log('Cannot scan this type, skipping ' . $file->ClassName . ' #' . $file->ID . '.');
+                continue;
+            }
+
+            $path = $file->getFullPath();
+            if (!$path) {
+                $this->log('Skipping ' . $file->ClassName . ' #' . $file->ID . ', no path on record. getFullPath = "' . $path . '"');
+                continue;
+            }
+            $logRecord = $file->scanForVirus();
+
+            // scans by a job/task will have an IPAddress of 127.0.0.1
+            $originalScan = $file->ClamAVScans()->sort('Created DESC')->first();
+            if (isset($originalScan) && isset($originalScan->IPAddress)) {
+                // replace 127.0.0.1 with original IPAddress
+                $logRecord->IPAddress = $originalScan->IPAddress;
+            }
+
+            if ($logRecord === ClamAV::OFFLINE) {
+                $this->log('ClamAV daemon is offline.', 'error');
+
+                return false;
+            }
+            if (!$logRecord) {
+                $this->log('Skipping ' . $file->ClassName . ' #' . $file->ID . '. File doesn\'t exist.');
+                continue;
+            }
+            if ($logRecord->IsInfected) {
+                $this->log($file->ClassName . ' #' . $file->ID . ' has a virus.', 'error');
+            } else {
+                $this->log($file->ClassName . ' #' . $file->ID . ' is clean.', 'created');
+            }
+            $logRecord->write();
+        }
+
+        return true;
     }
 }

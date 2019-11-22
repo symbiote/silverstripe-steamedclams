@@ -2,20 +2,27 @@
 
 namespace Symbiote\SteamedClams;
 
-use Controller;
-use Config;
-use File;
-use Debug;
 use LogicException;
-use SS_Object;
-use SS_Log;
-use Injector;
-use ArrayList;
-use SS_Datetime;
-use Director;
+use Psr\Log\LoggerInterface;
+use SilverStripe\Assets\File;
+use SilverStripe\Assets\Folder;
+use SilverStripe\Control\Controller;
+use SilverStripe\Control\Director;
+use SilverStripe\Core\Config\Config;
+use SilverStripe\Core\Config\Configurable;
+use SilverStripe\Core\Injector\Injectable;
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\ORM\ArrayList;
+use SilverStripe\ORM\DataList;
+use SilverStripe\ORM\DataObject;
+use Symbiote\SteamedClams\Model\ClamAVScan;
+use SilverStripe\Assets\Flysystem\ProtectedAssetAdapter;
 
-class ClamAV extends SS_Object
+class ClamAV
 {
+    use Injectable;
+    use Configurable;
+
     const MODULE_DIR = 'steamedclams';
 
     /**
@@ -47,11 +54,11 @@ class ClamAV extends SS_Object
      * @config
      * @var array
      */
-    private static $clamd = array(
+    private static $clamd = [
         // Path to a local socket file the daemon will listen on.
         // Default: disabled (must be specified by a user)
         'LocalSocket' => '/var/run/clamav/clamd.ctl',
-    );
+    ];
 
     /**
      * @var \ClamdBase
@@ -69,23 +76,27 @@ class ClamAV extends SS_Object
     protected $_cache_isOffline = null;
 
     /**
+     * @param File $file
+     *
      * @return ClamAVScan|null
      */
     public function scanFileRecordForVirus(File $file)
     {
         $isFileMaybeExternal = false;
+        $fileMetaData = $file->File->getMetadata();
         $filepath = $file->getFullPath();
+
         if (!file_exists($filepath)) {
             // If file can't be found, attempt to download
             // from external CDN or similar.
             $isFileMaybeExternal = true;
             $this->beforeHandleMissingFile($file);
-        }
-        if (!file_exists($filepath)) {
+
             return null;
         }
+
         $record = $this->scanFileForVirus($filepath);
-        if ($record && $record instanceof \DataObject) {
+        if ($record && $record instanceof DataObject) {
             $record->FileID = $file->ID;
         }
         if ($isFileMaybeExternal) {
@@ -98,44 +109,9 @@ class ClamAV extends SS_Object
     }
 
     /**
-     * @return ClamAVScan|null
-     */
-    public function scanFileForVirus($filepath)
-    {
-        $clamdConf = Config::inst()->get(__CLASS__, 'clamd');
-        $localSocket = isset($clamdConf['LocalSocket']) ? $clamdConf['LocalSocket'] : '';
-        if (!$localSocket) {
-            throw new LogicException('Empty value for "clamd.LocalSocket" config not allowed.');
-        }
-
-        $scanResult = $this->fileScan($filepath);
-        if ($scanResult === self::OFFLINE) {
-            $record = ClamAVScan::create();
-            $record->Filename = $filepath;
-            $record->IPAddress = $this->getIP();
-            $record->setRawData($scanResult);
-
-            return $record;
-        }
-
-        $stats = ($scanResult && isset($scanResult['stats'])) ? $scanResult['stats'] : null;
-        $filename = ($scanResult && isset($scanResult['file'])) ? $scanResult['file'] : null;
-        if ($stats === null || $filename === null) {
-            throw new LogicException('Expected an array with "stats" and "file" as key.');
-        }
-
-        $record = ClamAVScan::create();
-        $record->Filename = $filepath;
-        $record->IPAddress = $this->getIP();
-        $record->IsScanned = 1;
-        $record->IsInfected = ($stats !== 'OK');
-        $record->setRawData($scanResult);
-
-        return $record;
-    }
-
-    /**
      * If file doesn't exist on local machine, try to download from a CDN module or similar.
+     *
+     * @param File $file
      *
      * @return boolean|null
      */
@@ -154,143 +130,50 @@ class ClamAV extends SS_Object
     }
 
     /**
-     * If file didn't exist on local machine and downloaded from CDN, we want to re-remove it.
-     *
-     * @return boolean|null
+     * @return ClamAVScan|null
      */
-    public function afterHandleMissingFile(File $file)
+    public function scanFileForVirus($filepath)
     {
-        $result = null;
+        $clamdConf = Config::inst()->get(__CLASS__, 'clamd');
+        $localSocket = isset($clamdConf['LocalSocket']) ? $clamdConf['LocalSocket'] : '';
 
-        // Support CDN module 'CDNFile' extension
-        if ($file->hasMethod('deleteLocalIfExistsOnContentService')) {
-            //$this->log('Removing '.$file->ClassName.' #'.$file->ID.' from local machine -IF- it exists on CDN...');
-            $result = $result || $file->deleteLocalIfExistsOnContentService();
+        if (!$localSocket) {
+            throw new LogicException('Empty value for "clamd.LocalSocket" config not allowed.');
         }
 
-        // note(Jake): Perhaps add extension here to support other modules
+        $scanResult = $this->fileScan($filepath);
 
-        return $result;
-    }
+        if ($scanResult === self::OFFLINE) {
+            $record = ClamAVScan::create();
+            $record->Filename = $filepath;
+            $record->IPAddress = $this->getIP();
+            $record->setRawData($scanResult);
 
-    /**
-     * @return SS_List
-     */
-    public function getBaseFileList()
-    {
-        $list = File::get();
-        $list = $list->filter(array(
-            'ClassName:not' => 'Folder',
-        ));
-
-        return $list;
-    }
-
-    /**
-     * Get list of files that haven't been checked at all.
-     * ie. before installation of module
-     *
-     * @return SS_List
-     */
-    public function getInitialFileToScanList()
-    {
-        $excludeFileIDs = ClamAVScan::get()->column('FileID');
-        $excludeFileIDs = array_unique($excludeFileIDs);
-        $list = $this->getBaseFileList();
-        if (!$list) {
-            return new Arraylist();
-        }
-        $list = $list->filter(array(
-            'ID:not' => $excludeFileIDs
-        ));
-        $ignoreBeforeDatetime = $this->config()->initial_scan_ignore_before_datetime;
-        if ($ignoreBeforeDatetime) {
-            $list = $list->filter(array(
-                'Created:GreaterThanOrEqual' => $ignoreBeforeDatetime,
-            ));
-            //Debug::dump(SS_Datetime::now()); Debug::dump($ignoreBeforeDatetime); Debug::dump($list->count()); exit;
+            return $record;
         }
 
-        return $list;
-    }
+        $stats = ($scanResult && isset($scanResult['stats'])) ? $scanResult['stats'] : null;
 
-    /**
-     * Get list of files that couldn't be scanned when uploaded
-     * due to ClamAV daemon being down or not properly configured
-     * ie. after installation of module
-     *
-     * @return SS_List|null
-     */
-    public function getFailedToScanFileList()
-    {
-        $scanList = ClamAVScan::get();
-        $scanList = $scanList->filter(array(
-            'IsScanned'  => 0,
-            'Action'     => ClamAVScan::ACTION_NONE,
-            'FileID:not' => 0,
-        ));
-        $fileIDs = $scanList->column('FileID');
-        $fileIDs = array_unique($fileIDs);
-        if (!$fileIDs) {
-            return new ArrayList();
-        }
-        $list = $this->getBaseFileList();
-        if (!$list) {
-            return new ArrayList();
-        }
-        $list = $list->filter(array(
-            'ID' => $fileIDs
-        ));
-
-        return $list;
-    }
-
-    /**
-     * @return boolean
-     */
-    public function isOffline()
-    {
-        if ($this->_cache_isOffline !== null) {
-            return $this->_cache_isOffline;
-        }
-        $result = $this->version();
-        $result = ($result === ClamAV::OFFLINE);
-
-        return $this->_cache_isOffline = $result;
-    }
-
-    /**
-     * @return string
-     */
-    public function version()
-    {
-        $this->last_exception = null;
-
-        try {
-            $clamd = $this->getClamd();
-            $version = $clamd->version();
-        } catch (\ClamdSocketException $e) {
-            $this->setLastExceptionAndLog($e);
-            $version = self::OFFLINE;
+        $filename = ($scanResult && isset($scanResult['file'])) ? $scanResult['file'] : null;
+        if ($stats === null || $filename === null) {
+            throw new LogicException('Expected an array with "stats" and "file" as key.');
         }
 
-        return $version;
-    }
+        $record = ClamAVScan::create();
+        $record->Filename = $filepath;
+        $record->IPAddress = $this->getIP();
+        $record->IsScanned = 1;
+        $record->IsInfected = ($stats !== 'OK');
+        $record->setRawData($scanResult);
 
-    /**
-     * Get the last exception caught by this.
-     * Allows you to report the exact error to an admin/developer user in the CMS.
-     *
-     * @return \ClamdException
-     */
-    public function getLastException()
-    {
-        return $this->last_exception;
+        return $record;
     }
 
     /**
      * Scan for virus, return array() if ClamAV daemon is running and
      * returns false if it is not (or an error occurred connecting to the socket)
+     *
+     * @param string $filepath
      *
      * @return array|false
      */
@@ -298,7 +181,6 @@ class ClamAV extends SS_Object
     {
         $this->last_exception = null;
 
-        $scanResult = array();
         try {
             $clamd = $this->getClamd();
             $scanResult = $clamd->fileScan($filepath);
@@ -311,12 +193,33 @@ class ClamAV extends SS_Object
     }
 
     /**
+     * Return underlying Clamd implementation.
+     *
+     * @return \ClamdBase
+     */
+    protected function getClamd()
+    {
+        if ($this->clamd_instance) {
+            return $this->clamd_instance;
+        }
+
+        $result = null;
+        if (class_exists(Injector::class)) {
+            $result = Injector::inst()->create(\ClamdPipe::class);
+        } else {
+            $result = new \ClamdPipe;
+        }
+
+        return $this->clamd_instance = $result;
+    }
+
+    /**
      * Set exception, if it has a non-falsey value, log it.
      */
     protected function setLastExceptionAndLog(\Exception $e)
     {
         if ($e) {
-            SS_Log::log($e, SS_Log::WARN);
+            Injector::inst()->get(LoggerInterface::class)->warning('Query executed: ' . $e->getMessage());
         }
         $this->last_exception = $e;
     }
@@ -346,22 +249,143 @@ class ClamAV extends SS_Object
     }
 
     /**
-     * Return underlying Clamd implementation.
+     * If file didn't exist on local machine and downloaded from CDN, we want to re-remove it.
      *
-     * @return \ClamdBase
+     * @param File $file
+     *
+     * @return boolean|null
      */
-    protected function getClamd()
+    public function afterHandleMissingFile(File $file)
     {
-        if ($this->clamd_instance) {
-            return $this->clamd_instance;
-        }
         $result = null;
-        if (class_exists('Injector')) {
-            $result = Injector::inst()->create('ClamdPipe');
-        } else {
-            $result = new \ClamdPipe;
+
+        // Support CDN module 'CDNFile' extension
+        if ($file->hasMethod('deleteLocalIfExistsOnContentService')) {
+            //$this->log('Removing '.$file->ClassName.' #'.$file->ID.' from local machine -IF- it exists on CDN...');
+            $result = $result || $file->deleteLocalIfExistsOnContentService();
         }
 
-        return $this->clamd_instance = $result;
+        // note(Jake): Perhaps add extension here to support other modules
+
+        return $result;
+    }
+
+    /**
+     * Get list of files that haven't been checked at all.
+     * ie. before installation of module
+     *
+     * @return DataList|Arraylist
+     */
+    public function getInitialFileToScanList()
+    {
+        $excludeFileIDs = ClamAVScan::get()->column('FileID');
+        $excludeFileIDs = array_unique($excludeFileIDs);
+        $list = $this->getBaseFileList();
+        if (!$list) {
+            return new Arraylist();
+        }
+
+        if (!empty($excludeFileIDs)) {
+            $list = $list->filter([
+                'ID:not' => $excludeFileIDs,
+            ]);
+        }
+        $ignoreBeforeDatetime = Config::inst()->get(__CLASS__, 'initial_scan_ignore_before_datetime');
+        if ($ignoreBeforeDatetime) {
+            $list = $list->filter([
+                'Created:GreaterThanOrEqual' => $ignoreBeforeDatetime,
+            ]);
+            //Debug::dump(SS_Datetime::now()); Debug::dump($ignoreBeforeDatetime); Debug::dump($list->count()); exit;
+        }
+
+        return $list;
+    }
+
+    /**
+     * @return DataList
+     */
+    public function getBaseFileList()
+    {
+        $list = File::get();
+        $list = $list->filter([
+            'ClassName:not' => Folder::class,
+        ]);
+
+        return $list;
+    }
+
+    /**
+     * Get list of files that couldn't be scanned when uploaded
+     * due to ClamAV daemon being down or not properly configured
+     * ie. after installation of module
+     *
+     * @return ArrayList|DataList
+     */
+    public function getFailedToScanFileList()
+    {
+        $scanList = ClamAVScan::get();
+        $scanList = $scanList->filter([
+            'IsScanned'  => 0,
+            'Action'     => ClamAVScan::ACTION_NONE,
+            'FileID:not' => 0,
+        ]);
+        $fileIDs = $scanList->column('FileID');
+        $fileIDs = array_unique($fileIDs);
+        if (!$fileIDs) {
+            return new ArrayList();
+        }
+        $list = $this->getBaseFileList();
+        if (!$list) {
+            return new ArrayList();
+        }
+        $list = $list->filter([
+            'ID' => $fileIDs,
+        ]);
+
+        return $list;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isOffline()
+    {
+        if ($this->_cache_isOffline !== null) {
+            return $this->_cache_isOffline;
+        }
+        $result = $this->version();
+        $result = ($result === ClamAV::OFFLINE);
+
+        return $this->_cache_isOffline = $result;
+    }
+
+    /**
+     * @return string
+     */
+    public function version()
+    {
+        $this->last_exception = null;
+
+        try {
+            $clamd = $this->getClamd();
+
+            $version = $clamd->version();
+        } catch (\ClamdSocketException $e) {
+            $this->setLastExceptionAndLog($e);
+            $version = self::OFFLINE;
+        }
+
+        return $version;
+    }
+
+    /**
+     * Get the last exception caught by this.
+     * Allows you to report the exact error to an admin/developer user in the CMS.
+     *
+     * @return \ClamdException
+     */
+    public function getLastException()
+    {
+        return $this->last_exception;
     }
 }

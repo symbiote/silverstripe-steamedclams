@@ -1,6 +1,9 @@
 ---
 Name: steamedclams
 ---
-File:
+SilverStripe\Assets\File:
   extensions:
-    ['Symbiote\SteamedClams\ClamAVExtension']
+    - Symbiote\SteamedClams\Extension\ClamAVExtension
+SilverStripe\SiteConfig\SiteConfig:
+  extensions:
+    -  Symbiote\SteamedClams\Extension\ClamAVSiteConfigExtension

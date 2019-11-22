@@ -1,17 +1,20 @@
 <?php
 
-namespace Symbiote\SteamedClams;
+namespace Symbiote\SteamedClams\Tasks;
 
-use Config;
-use File;
-use DB;
-use Debug;
-use LogicException;
+
+use SilverStripe\Control\HTTPRequest;
 
 class ClamAVInstallTask extends ClamAVBaseTask
 {
+    /**
+     * @var string
+     */
     protected $title = 'ClamAV Virus Install Task';
 
+    /**
+     * @var string
+     */
     protected $description = 'Scans all files that haven\'t been scanned yet and aren\'t queued for later scanning.';
 
     /**
@@ -19,6 +22,13 @@ class ClamAVInstallTask extends ClamAVBaseTask
      */
     protected $debug_limit = 0;
 
+    /**
+     * @param HTTPRequest $request
+     * @param null $job
+     *
+     * @return bool|void
+     * @throws \Exception
+     */
     public function run($request, $job = null)
     {
         if (parent::run($request, $job) === false) {

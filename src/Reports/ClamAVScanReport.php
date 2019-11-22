@@ -1,18 +1,29 @@
 <?php
 
-use Symbiote\SteamedClams\ClamAVScan;
+namespace Symbiote\SteamedClams\Reports;
 
-if (class_exists('SS_Report')) {
+use SilverStripe\Control\Controller;
+use SilverStripe\Forms\DateField;
+use SilverStripe\Forms\DropdownField;
+use SilverStripe\Forms\FieldList;
+use SilverStripe\Forms\GridField\GridField;
+use SilverStripe\Forms\GridField\GridFieldExportButton;
+use SilverStripe\ORM\DataList;
+use SilverStripe\Reports\Report;
+use SilverStripe\Security\Member;
+use Symbiote\SteamedClams\Model\ClamAVScan;
+
 /**
  * Class ClamAVScanReport
  *
- * Class can not be namespaced for SilverStripe 3
- *
  * This report gives the option to select certain date ranges and view who uploaded what kind of file
  */
-class ClamAVScanReport extends SS_Report
+class ClamAVScanReport extends Report
 {
 
+    /**
+     * @return string
+     */
     public function title()
     {
         return 'Clam AV Scan results';
@@ -24,25 +35,38 @@ class ClamAVScanReport extends SS_Report
     public function parameterFields()
     {
         $fieldList = FieldList::create(
-            array(
+            [
                 $startDate = DateField::create('Created:LessThan', _t('ClamAV.FROM_DATE', 'From date')),
                 $endDate = DateField::create('Created:GreaterThan', _t('ClamAV.TO_DATE', 'To date')),
-                $scanned = DropdownField::create('IsScanned', _t('ClamAV.IS_SCANNED', 'Is scanned'), array(
+                $scanned = DropdownField::create('IsScanned', _t('ClamAV.IS_SCANNED', 'Is scanned'), [
                     true  => 'Yes',
-                    false => 'No'
-                )),
-                $action = DropdownField::create('Action', _t('ClamAV.ACTION_TAKEN', 'Action taken'),
-                    array(
+                    false => 'No',
+                ]),
+                $action = DropdownField::create(
+                    'Action',
+                    _t('ClamAV.ACTION_TAKEN', 'Action taken'),
+                    [
                         ClamAVScan::ACTION_NONE    => _t('ClamAV.ACTION_TAKEN.NONE', 'No action taken'),
                         ClamAVScan::ACTION_DELETED => _t('ClamAV.ACTION_TAKEN.DELETED', 'File deleted'),
                         ClamAVScan::ACTION_IGNORED => _t('ClamAV.ACTION_TAKEN.IGNORED', 'File ignored'),
-                    )),
-                $memberField = DropdownField::create('MemberID', _t('ClamAV.UPLOADED_BY', 'Uploaded by'),
-                    Member::get()->map('ID', 'getName')->toArray())
-            )
+                    ]
+                ),
+                $memberField = DropdownField::create(
+                    'MemberID',
+                    _t('ClamAV.UPLOADED_BY', 'Uploaded by'),
+                    Member::get()->map('ID', 'getName')->toArray()
+                ),
+            ]
         );
-        $startDate->setConfig('showcalendar', true);
-        $endDate->setConfig('showcalendar', true);
+        $startDate->setHTML5(false)
+            ->setDateFormat('dd/MM/yyyy')
+            ->setAttribute('placeholder', sprintf('Example: %s', date('d/m/Y')))
+            ->setDescription('Date format (dd/mm/yyyy)');
+
+        $endDate->setHTML5(false)
+            ->setDateFormat('dd/MM/yyyy')
+            ->setAttribute('placeholder', sprintf('Example: %s', date('d/m/Y')))
+            ->setDescription('Date format (dd/mm/yyyy)');
         $scanned->setEmptyString('All');
         $action->setEmptyString('All actions');
         $memberField->setEmptyString('All members');
@@ -68,16 +92,33 @@ class ClamAVScanReport extends SS_Report
         // instead of those from {@link Symbiote\\SteamedClams\\ClamAVScan}
         /** @var GridField $report */
         $report = $fields->dataFieldByName('Report');
-        $report->getConfig()->getComponentByType('GridFieldExportButton')->setExportColumns($this->columns());
+        $report->getConfig()->getComponentByType(GridFieldExportButton::class)->setExportColumns($this->columns());
 
         return $fields;
     }
 
     /**
+     * @inheritdoc
+     * @return array
+     */
+    public function columns()
+    {
+        return [
+            'UserIdentifier'   => _t('ClamAV.USER_IDENTIFIER', 'User Identifier'),
+            'Created'          => _t('ClamAV.DATE_SCANNED', 'Date Scanned'),
+            'File.Title'       => _t('ClamAV.FILE_NAME', 'File Name'),
+            'LocationUploaded' => _t('ClamAV.LOCATION_UPLOADED', 'Location Uploaded'),
+            'StateMessage'     => _t('ClamAV.STATE', 'State'),
+            'RawDataSummary'   => _t('ClamAV.INFO', 'Virus Scan Info.'),
+        ];
+    }
+
+    /**
      * @param array $params
+     *
      * @return DataList
      */
-    public function sourceRecords($params = array())
+    public function sourceRecords($params = [])
     {
         $filter = $this->createFilter($params);
 
@@ -87,42 +128,24 @@ class ClamAVScanReport extends SS_Report
     }
 
     /**
-     * @inheritdoc
-     * @return array
-     */
-    public function columns()
-    {
-        return array(
-            'UserIdentifier'   => _t('ClamAV.USER_IDENTIFIER', 'User Identifier'),
-            'Created'          => _t('ClamAV.DATE_SCANNED', 'Date Scanned'),
-            'File.Title'       => _t('ClamAV.FILE_NAME', 'File Name'),
-            'LocationUploaded' => _t('ClamAV.LOCATION_UPLOADED', 'Location Uploaded'),
-            'StateMessage'     => _t('ClamAV.STATE', 'State'),
-            'RawDataSummary'   => _t('ClamAV.INFO', 'Virus Scan Info.'),
-        );
-
-    }
-
-    /**
      * @param array $params
+     *
      * @return array
      */
     private function createFilter(&$params)
     {
-        $filter = array();
+        $filter = [];
         if (isset($params['Action'])) {
             $filter['Action'] = $params['Action'];
         }
         if (isset($params['MemberID'])) {
             $filter['MemberID'] = $params['MemberID'];
         }
-        if (isset($params['Scanned'])) {
-            $filter['Scanned'] = $params['Scanned'];
+        if (isset($params['IsScanned'])) {
+            $filter['IsScanned'] = $params['IsScanned'];
         }
-        unset($params['Scanned'], $params['MemberID'], $params['Action']);
+        unset($params['IsScanned'], $params['MemberID'], $params['Action']);
 
         return $filter;
     }
-}
-
 }

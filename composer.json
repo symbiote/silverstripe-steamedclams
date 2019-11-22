@@ -1,27 +1,36 @@
 {
-    "name": "symbiote/silverstripe-steamedclams",
-    "description": "",
-    "type": "silverstripe-module",
-    "keywords": ["silverstripe"],
-    "license": "BSD-3-Clause",
-    "authors": [
+  "name": "symbiote/silverstripe-steamedclams",
+  "description": "",
+  "type": "silverstripe-vendormodule",
+  "keywords": [
+    "silverstripe"
+  ],
+  "license": "BSD-3-Clause",
+  "authors": [
     {
-        "name": "Jake Bentvelzen",
-        "email": "jake@symbiote.com.au"
-    }],
-    "require": {
-        "silverstripe/framework": "~3.2"
+      "name": "Jake Bentvelzen",
+      "email": "jake@symbiote.com.au"
+    }
+  ],
+  "require": {
+    "silverstripe/framework": "^4"
+  },
+  "suggest": {
+    "silverstripe/queuedjobs": "For allowing ClamAV 'missed files' scan to be run from a queued job. Otherwise you can run the tasks manually or via cronjob."
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-master": "3.0.x-dev"
     },
-    "suggest": {
-        "silverstripe/queuedjobs": "For allowing ClamAV 'missed files' scan to be run from a queued job. Otherwise you can run the tasks manually or via cronjob."
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "2.0.x-dev"
-        },
-        "installer-name": "steamedclams"
-    },
-	"replace": {
-		"silbinarywolf/silverstripe-steamedclams": "self.version"
-	}
+    "expose": [
+      "client/css",
+      "client/images"
+    ]
+  },
+  "autoload": {
+    "psr-4": {
+      "Symbiote\\SteamedClams\\": "src/",
+      "Symbiote\\SteamedClams\\Tests\\": "tests/"
+    }
+  }
 }
