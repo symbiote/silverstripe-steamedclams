@@ -4,6 +4,7 @@ namespace Symbiote\SteamedClams\Tasks;
 
 use Exception;
 use Psr\Log\LoggerInterface;
+use SilverStripe\Core\Convert;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\ORM\DataList;
@@ -134,11 +135,11 @@ class ClamAVBaseTask extends BuildTask
 
         switch ($type) {
             case '':
-                DB::alteration_message($message);
+                DB::alteration_message(Convert::raw2xml($message));
                 break;
 
             case 'created':
-                DB::alteration_message($message, 'created');
+                DB::alteration_message(Convert::raw2xml($message), 'created');
                 break;
 
             case 'error':
@@ -148,12 +149,12 @@ class ClamAVBaseTask extends BuildTask
                 break;
 
             case 'changed':
-                DB::alteration_message($message, 'changed');
+                DB::alteration_message(Convert::raw2xml($message), 'changed');
                 break;
 
             case 'notice':
             case 'warning':
-                DB::alteration_message($message, 'notice');
+                DB::alteration_message(Convert::raw2xml($message), 'notice');
                 break;
 
             default:
