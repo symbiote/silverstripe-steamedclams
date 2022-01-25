@@ -95,7 +95,7 @@ class ClamAV
             return null;
         }
 
-        $record = $this->scanFileForVirus($filepath);
+        $record = $this->scanFileForVirus($file);
         if ($record && $record instanceof DataObject) {
             $record->FileID = $file->ID;
         }
@@ -130,10 +130,13 @@ class ClamAV
     }
 
     /**
+     * @param File $file
      * @return ClamAVScan|null
      */
-    public function scanFileForVirus($filepath)
+    public function scanFileForVirus($file)
     {
+        $filepath = $file->getFullPath();
+        $useStreams = Config::inst()->get(__CLASS__, 'use_streams');
         $clamdConf = Config::inst()->get(__CLASS__, 'clamd');
         $localSocket = isset($clamdConf['LocalSocket']) ? $clamdConf['LocalSocket'] : '';
 
@@ -141,7 +144,7 @@ class ClamAV
             throw new LogicException('Empty value for "clamd.LocalSocket" config not allowed.');
         }
 
-        $scanResult = $this->fileScan($filepath);
+        $scanResult = $useStreams ? $this->streamScan($file->getStream()) : $this->fileScan($filepath);
 
         if ($scanResult === self::OFFLINE) {
             $record = ClamAVScan::create();
@@ -154,7 +157,7 @@ class ClamAV
 
         $stats = ($scanResult && isset($scanResult['stats'])) ? $scanResult['stats'] : null;
 
-        $filename = ($scanResult && isset($scanResult['file'])) ? $scanResult['file'] : null;
+        $filename = ($scanResult && isset($scanResult['file'])) ? $scanResult['file'] : $filepath;
         if ($stats === null || $filename === null) {
             throw new LogicException('Expected an array with "stats" and "file" as key.');
         }
@@ -184,6 +187,29 @@ class ClamAV
         try {
             $clamd = $this->getClamd();
             $scanResult = $clamd->fileScan($filepath);
+        } catch (\ClamdSocketException $e) {
+            $this->setLastExceptionAndLog($e);
+            $scanResult = self::OFFLINE;
+        }
+
+        return $scanResult;
+    }
+
+    /**
+     * Scan for virus, return array() if ClamAV daemon is running and
+     * returns false if it is not (or an error occurred connecting to the socket)
+     *
+     * @param mixed $stream
+     *
+     * @return array|false
+     */
+    protected function streamScan($stream)
+    {
+        $this->last_exception = null;
+
+        try {
+            $clamd = $this->getClamd();
+            $scanResult = $clamd->streamScan($stream);
         } catch (\ClamdSocketException $e) {
             $this->setLastExceptionAndLog($e);
             $scanResult = self::OFFLINE;
