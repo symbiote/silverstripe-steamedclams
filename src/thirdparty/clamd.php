@@ -93,7 +93,7 @@ abstract class ClamdBase {
     }
     
     /* `streamScan` is used to scan a buffer. */
-    public function streamScan($buffer) {
+    public function stringScan($buffer) {
         $port    = null;
         $socket  = null;
         $command = 'STREAM';
@@ -114,6 +114,35 @@ abstract class ClamdBase {
 
         socket_close($socket);
   
+        return array('stats' => trim(str_replace('stream: ', '', $return)));
+    }
+
+    /* `streamScan` is used to scan a buffer. */
+    public function streamScan($input) {
+        $port    = null;
+        $socket  = null;
+        $command = 'STREAM';
+        $return  = null;
+
+        $socket = $this->getSocket();
+        socket_send($socket, $command, strlen($command), 0);
+        socket_recv($socket, $return, CLAMD_MAXP, 0);
+
+        sscanf($return, 'PORT %d\n', $port);
+
+        $stream = socket_create(AF_INET, SOCK_STREAM, 0);
+        socket_connect($stream, CLAMD_HOST, $port);
+        while (!feof($input)) {
+            $buffer = fread($input, 1024 * 64);
+            socket_send($stream, $buffer, strlen($buffer), 0);
+        }
+        fclose($input);
+        socket_close($stream);
+
+        socket_recv($socket, $return, CLAMD_MAXP, 0);
+
+        socket_close($socket);
+
         return array('stats' => trim(str_replace('stream: ', '', $return)));
     }
 }
