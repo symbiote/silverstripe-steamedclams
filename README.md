@@ -74,6 +74,8 @@ Symbiote\SteamedClams\ClamAV:
   deny_on_failure: false
   # For configuring on existing site builds and ignoring the scanning of pre-module install `File` records. 
   initial_scan_ignore_before_datetime: '1970-12-25 00:00:00'
+  # If true will send files to clamd as streams (by default files are referenced using their path). Useful when files are stored remotely and/or encrypted at rest.
+  use_streams: false
 ```
 
 If you have the QueuedJobs module installed, you can configure when files missed by ClamAV daemon are scanned.
