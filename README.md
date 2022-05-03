@@ -89,6 +89,30 @@ Symbiote\SteamedClams\ClamAVScanJob:
   time: '02:00:00'
 ```
 
+## File Permissions
+
+In order to scan a file on upload, the `clamav` user (or equivalent) will need to have
+permission to read the files in the `public/assets/.protected` directory. If this fails
+to read the file, the default behaviour is for the file to be rejected as "infected"
+with an "ACCESS DENIED" error.
+
+A typical linux setup would have permissions on these files something similar to:
+`www-data www-data rw-------`, which means that only the `www-data` user can read those
+files. If you have a setup where a `clamav` user is in the `www-data` group, you'll need
+the following configuration to update the permissions:
+
+```yml
+SilverStripe\Assets\Flysystem\AssetAdapter:
+  file_permissions:
+    file:
+      public: 0664
+      private: 0660
+    dir:
+      public: 0775
+      private: 0770
+```
+
+
 # Install on existing project
 
 By running the task below, all files uploaded before installation of the module will be
