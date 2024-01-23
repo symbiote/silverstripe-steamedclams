@@ -5,6 +5,7 @@ namespace Symbiote\SteamedClams\Extension;
 use SilverStripe\Assets\File;
 use SilverStripe\Assets\Flysystem\ProtectedAssetAdapter;
 use SilverStripe\Assets\Folder;
+use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\ORM\DataExtension;
 use SilverStripe\ORM\DataList;
@@ -12,7 +13,6 @@ use SilverStripe\ORM\DataObject;
 use SilverStripe\ORM\ValidationResult;
 use Symbiote\SteamedClams\ClamAV;
 use Symbiote\SteamedClams\Model\ClamAVScan;
-use SilverStripe\Core\Config\Config;
 use Silverstripe\SiteConfig\SiteConfig;
 
 /**
@@ -163,15 +163,24 @@ class ClamAVExtension extends DataExtension
             return null;
         }
 
-        $fileMetaData = $this->owner->File->getMetadata();
-
+        // For publicly accessible file, return the path from URL of the file
         if ($this->owner->isPublished()) {
             return PUBLIC_PATH . $this->owner->File->getURL();
-        } else {
-            return ASSETS_PATH . '/' .
-                Config::inst()->get(ProtectedAssetAdapter::class, 'secure_folder')
-                . '/' . $fileMetaData['path'];
         }
+
+        // For protected file, construct the expected path of the file based on
+        // - Asset folder name
+        // - Name of the secure folder
+        // - URL of the file
+        $assetDir = DIRECTORY_SEPARATOR . ASSETS_DIR . DIRECTORY_SEPARATOR;
+        $assetDirLength = strlen($assetDir);
+        $sourceUrl = $this->owner->File->getSourceURL();
+
+        return DIRECTORY_SEPARATOR . File::join_paths(
+            ASSETS_PATH,
+            Config::inst()->get(ProtectedAssetAdapter::class, 'secure_folder'),
+            str_starts_with($sourceUrl, $assetDir) ? substr($sourceUrl, $assetDirLength) : $sourceUrl
+        );
     }
 
     /**

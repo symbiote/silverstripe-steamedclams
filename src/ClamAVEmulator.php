@@ -3,7 +3,9 @@
 namespace Symbiote\SteamedClams;
 
 use LogicException;
+use SilverStripe\Assets\File;
 use SilverStripe\Core\Config\Config;
+use SilverStripe\ORM\DataObject;
 
 /**
  * For emulating/faking ClamAV results
@@ -117,4 +119,14 @@ class ClamAVEmulator extends ClamAV
             . '". Use constants provided in ' . __CLASS__ . ' class.'
         );
     }
+
+    public function scanFileRecordForVirus(File $file)
+    {
+        $record = $this->scanFileForVirus('fake/file.txt');
+        if ($record && $record instanceof DataObject) {
+            $record->FileID = $file->ID;
+        }
+        return $record;
+    }
+
 }

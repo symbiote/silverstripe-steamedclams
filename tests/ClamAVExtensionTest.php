@@ -1,9 +1,12 @@
 <?php
 
-namespace Symbiote\SteamedClams;
+namespace Symbiote\SteamedClams\Tests;
 
-use SilverStripe\Control\Director;
+use SilverStripe\Assets\Flysystem\ProtectedAssetAdapter;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
+use Symbiote\SteamedClams\ClamAV;
+use Symbiote\SteamedClams\ClamAVEmulator;
 use Symbiote\SteamedClams\Model\ClamAVScan;
 use SilverStripe\Assets\File;
 use SilverStripe\ORM\ValidationException;
@@ -15,30 +18,34 @@ class ClamAVExtensionTest extends SapphireTest
 {
     protected $usesDatabase = true;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
         TestAssetStore::activate('UploadTest');
         BasicAuth::config()->set('ignore_cli', false);
+
+        $clamAV = new ClamAVEmulator();
+        Injector::inst()->registerService($clamAV, ClamAV::class);
     }
 
     //protected static $fixture_file = 'ClamAVExtensionTest.yml';
 
-    protected function getMockFile($name = 'test-file.txt')
+    protected function getMockFile($name = 'test-file.txt'): string
     {
-        $absoluteTmpPath = ASSETS_PATH . DIRECTORY_SEPARATOR . $name;
+        $absoluteTmpPath = TestAssetStore::base_path() . DIRECTORY_SEPARATOR . $name;
         file_put_contents($absoluteTmpPath, 'testtext');
 
         return $absoluteTmpPath;
     }
+
     /**
      *
      */
-    public function testBlockFileWriteIfVirusAndDenyOnFailure()
+    public function testBlockFileWriteIfVirusAndDenyOnFailure(): void
     {
-        ClamAVEmulator::config()->mode = ClamAVEmulator::MODE_HAS_VIRUS;
-        ClamAV::config()->deny_on_failure = true;
+        ClamAVEmulator::config()->set('mode', ClamAVEmulator::MODE_HAS_VIRUS);
+        ClamAV::config()->set('deny_on_failure', true);
 
         $scanCount = ClamAVScan::get()->count();
 
@@ -60,10 +67,10 @@ class ClamAVExtensionTest extends SapphireTest
         $this->assertEquals($fileCount, File::get()->count());
     }
 
-    public function testFileLogIfVirus()
+    public function testFileLogIfVirus(): void
     {
-        ClamAVEmulator::config()->mode = ClamAVEmulator::MODE_HAS_VIRUS;
-        ClamAV::config()->deny_on_failure = false;
+        ClamAVEmulator::config()->set('mode', ClamAVEmulator::MODE_HAS_VIRUS);
+        ClamAV::config()->set('deny_on_failure', false);
 
         $name = 'updated-file.txt';
 
@@ -81,19 +88,17 @@ class ClamAVExtensionTest extends SapphireTest
         // Ensure scan is created
         $this->assertEquals($scanCount + 1, ClamAVScan::get()->count());
 
-        // Ensure file not get created if it has a virus
+        // Ensure file created because deny_on_failure is disabled
         $this->assertEquals($fileCount, File::get()->count());
     }
 
-    public function testFileLogIfVirusScannerOffline()
+    public function testFileLogIfVirusScannerOffline(): void
     {
-        ClamAVEmulator::config()->mode = ClamAVEmulator::MODE_OFFLINE;
-        ClamAV::config()->deny_on_failure = false;
+        ClamAVEmulator::config()->set('mode', ClamAVEmulator::MODE_OFFLINE);
+        ClamAV::config()->set('deny_on_failure', false);
 
         $name = 'updated-file.txt';
-        $filePathName = $this->getMockFile($name);
 
-        $fileCount = File::get()->count();
         $scanCount = ClamAVScan::get()->count();
         $record = File::create();
         $record->Name = $name;
@@ -109,16 +114,16 @@ class ClamAVExtensionTest extends SapphireTest
         $this->assertEquals($scanCount + 1, ClamAVScan::get()->count());
 
         // Ensure file gets created regardless of whether it has a virus
-        $this->assertEquals($fileCount, File::get()->count());
+        $this->assertEquals(1, File::get()->count());
     }
 
-    public function testPhysicalFileRemovalOnNewFileRecordIfDenied()
+    public function testPhysicalFileRemovalOnNewFileRecordIfDenied(): void
     {
-        ClamAVEmulator::config()->mode = ClamAVEmulator::MODE_HAS_VIRUS;
-        ClamAV::config()->deny_on_failure = true;
+        ClamAVEmulator::config()->set('mode', ClamAVEmulator::MODE_HAS_VIRUS);
+        ClamAV::config()->set('deny_on_failure', true);
 
         $filename = 'clamav_' . __FUNCTION__ . '.txt';
-        $filepath = ASSETS_PATH . DIRECTORY_SEPARATOR . $filename;
+        $filepath = TestAssetStore::base_path() . DIRECTORY_SEPARATOR . $filename;
 
         $this->assertFalse(file_exists($filepath));
         file_put_contents($filepath, 'testtext');
@@ -128,9 +133,8 @@ class ClamAVExtensionTest extends SapphireTest
         $record = File::create();
         $record->File->setFromLocalFile($filepath, $filename);
 
-        $fileMetaData = $record->File->getMetadata();
-        $newFilepath = ASSETS_PATH . '/' . Config::inst()->get(ProtectedAssetAdapter::class, 'secure_folder')
-            . '/'. $fileMetaData['path'];
+        $newFilepath = TestAssetStore::base_path() . '/' . Config::inst()->get(ProtectedAssetAdapter::class, 'secure_folder')
+            . '/'. $record->File->getFilename();
 
         try {
             $record->write();
@@ -145,20 +149,20 @@ class ClamAVExtensionTest extends SapphireTest
         $this->assertFalse($fileExists);
     }
 
-    public function testPhysicalFileRemovalOnNewFileRecordIfNotDenied()
+    public function testPhysicalFileRemovalOnNewFileRecordIfNotDenied(): void
     {
-        ClamAVEmulator::config()->mode = ClamAVEmulator::MODE_HAS_VIRUS;
-        ClamAV::config()->deny_on_failure = false;
+        ClamAVEmulator::config()->set('mode', ClamAVEmulator::MODE_HAS_VIRUS);
+        ClamAV::config()->set('deny_on_failure', false);
 
         $filename = 'clamav_' . __FUNCTION__ . '.txt';
-        $filepath = ASSETS_PATH . DIRECTORY_SEPARATOR . $filename;
+        $filepath = TestAssetStore::base_path() . DIRECTORY_SEPARATOR . $filename;
         // Ensure file didn't already exist on system
         $this->assertFalse(file_exists($filepath));
         file_put_contents($filepath, 'testtext');
         $this->assertTrue(file_exists($filepath));
 
         $record = File::create();
-        $record->Filename = ASSETS_DIR . '/' . $filename;
+        $record->Filename = TestAssetStore::base_path() . '/' . $filename;
         try {
             $record->write();
         } catch (ValidationException $e) {
