@@ -551,7 +551,7 @@ class ClamAVScan extends DataObject
     {
         $value = $this->getField('RawData');
         if (is_string($value)) {
-            $value = Convert::json2array($value);
+            $value = json_decode($value, true);
         }
 
         return $value;
@@ -561,11 +561,12 @@ class ClamAVScan extends DataObject
      * @param array $value
      *
      * @return null
+     * @throws \JsonException
      */
     public function setRawData($value)
     {
         if (is_array($value)) {
-            $value = Convert::array2json($value);
+            $value = json_encode($value, JSON_THROW_ON_ERROR);
         }
         $this->setField('RawData', $value);
     }

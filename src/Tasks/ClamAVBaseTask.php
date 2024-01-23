@@ -173,7 +173,7 @@ class ClamAVBaseTask extends BuildTask
      * @param $errline
      * @param $errcontext
      */
-    public function log_error_handler($errno, $errstr, $errfile, $errline, $errcontext)
+    public function log_error_handler(int $errno, string $errstr, string $errfile = null, int $errline = null, array $errcontext = null): void
     {
         DB::alteration_message($errstr, 'error');
 

@@ -44,7 +44,7 @@ class ClamAVAdmin extends ModelAdmin
     /**
      * @var string
      */
-    private static $menu_icon = 'vendor/symbiote/silverstripe-steamedclams/client/images/clamav_icon.png';
+    private static $menu_icon = 'symbiote/silverstripe-steamedclams:client/images/clamav_icon.png';
 
     /**
      * @var array
@@ -117,7 +117,7 @@ class ClamAVAdmin extends ModelAdmin
             $versionField = LiteralField::create('ClamAV_Version', $version);
             $versionField->setRightTitle($reason);
             $versionField->dontEscape = true;
-            $fields->insertBefore($versionField, $insertBeforeFieldName);
+            $fields->insertBefore($insertBeforeFieldName, $versionField);
 
             // Files to scan with install task
             $listCount = 0;
@@ -129,12 +129,12 @@ class ClamAVAdmin extends ModelAdmin
 
             if ($listCount > 0) {
                 $fields->insertBefore(
+                    $insertBeforeFieldName,
                     ReadonlyField::create(
                         'ClamAV_InitialScan',
                         'Files to scan with install task',
                         $listCount . ' '
-                    ),
-                    $insertBeforeFieldName
+                    )
                 );
             }
 
@@ -145,9 +145,9 @@ class ClamAVAdmin extends ModelAdmin
                 $listCount = $list->count();
             }
             $fields->insertBefore(
+                $insertBeforeFieldName,
                 ReadonlyField::create('ClamAV_NeedScan', 'Files that failed to scan', $listCount . ' ')
-                    ->setRightTitle('Due to ClamAV daemon being inaccessible/offline.'),
-                $insertBeforeFieldName
+                    ->setRightTitle('Due to ClamAV daemon being inaccessible/offline.')
             );
         });
 

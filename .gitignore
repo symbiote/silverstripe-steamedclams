@@ -1,1 +1,5 @@
 .idea
+.phpunit.result.cache
+composer.lock
+public/
+vendor/

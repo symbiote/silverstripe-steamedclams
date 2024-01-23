@@ -7,7 +7,7 @@ nightly cron that scans the files or if you have queuedjobs installed, it will a
 # Composer Install
 
 ```
-composer require symbiote/silverstripe-steamedclams:~2.0
+composer require symbiote/silverstripe-steamedclams
 ```
 
 # Screenshots
@@ -137,9 +137,10 @@ ClamAVEmulator::config()->mode = ClamAVEmulator::MODE_OFFLINE;
 ```
 
 # Supports
-- Silverstripe 4.0 and up 
+- Silverstripe 5.0 and up
 - [Versioned Files](https://github.com/symbiote/silverstripe-versionedfiles)
 - [CDN Content](https://github.com/symbiote/silverstripe-cdncontent)
+- For Silverstripe 4.x use 3.0
 - For Silverstripe 3.2 and up (3.1 *should* work, create an issue if you determine otherwise) use 1.0
 
 # Credits
