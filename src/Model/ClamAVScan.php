@@ -366,12 +366,13 @@ class ClamAVScan extends DataObject
     public function processFileActionDelete()
     {
         if ($this->FileID > 0) {
+            /** @var File $file */
             $file = $this->File();
             if ($file->exists()) {
-                $file->delete();
+                $file->deleteFile();
             }
         }
-        $action = (int)$this->Action;
+        $action = (int) $this->Action;
         if ($action !== ClamAVScan::ACTION_DELETED) {
             $this->Action = ClamAVScan::ACTION_DELETED;
             $member = Security::getCurrentUser();
@@ -539,7 +540,7 @@ class ClamAVScan extends DataObject
     public function getRawDataSummary()
     {
         $rawData = $this->RawData;
-        $value = ($rawData && isset($rawData['stats'])) ? $rawData['stats'] : '';
+        $value = ($rawData && isset($rawData['status'])) ? $rawData['status'] : '';
 
         return $value;
     }

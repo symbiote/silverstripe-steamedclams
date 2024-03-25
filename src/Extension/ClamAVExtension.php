@@ -55,13 +55,13 @@ class ClamAVExtension extends DataExtension
         // If its a new file, scan it.
         $doVirusScan = ($this->owner->ID == 0);
 
-        // Support VersionedFiles module
-        // ie. If file has been replaced, scan it.
+        // Scan a file if it changed
         $changedFields = $this->owner->getChangedFields(true, DataObject::CHANGE_VALUE);
-        $currentVersionIDChanged = (isset($changedFields['CurrentVersionID'])) ? $changedFields['CurrentVersionID'] : [];
-
-        if ($currentVersionIDChanged && $currentVersionIDChanged['before'] != $currentVersionIDChanged['after']) {
-            $doVirusScan = true;
+        foreach (['File', 'FileHash', 'Version', 'CurrentVersionID'] as $changeField) {
+            if (isset($changedFields[$changeField]) && $changedFields[$changeField]['before'] !== $changedFields[$changeField]['after']) {
+                $doVirusScan = true;
+                break;
+            }
         }
 
         // NOTE(Jake): Perhaps add $this->extend('updateDoVirusScan'); so other modules can support this.
@@ -105,11 +105,8 @@ class ClamAVExtension extends DataExtension
         // Delete infected file
         // (If file hasn't been written to DB yet)
         if ($this->owner->ID == 0) {
-            $filepath = $this->owner->getFullPath();
+            $this->owner->deleteFile();
 
-            if (file_exists($filepath)) {
-                @unlink($filepath);
-            }
             $record->Action = ClamAVScan::ACTION_DELETED;
         }
 
@@ -152,35 +149,27 @@ class ClamAVExtension extends DataExtension
     }
 
     /**
-     * Returns an absolute filesystem path to the file.
-     * Use {@link getRelativePath()} to get the same path relative to the webroot.
+     * Returns a source URL/path to the file based on the used assets store
+     * Optionally removes any query params (e.g. when used with S3).
      *
-     * @return String
+     * @param bool $stripQueryParams
+     * @return string|null
      */
-    public function getFullPath()
+    public function getFullPath(bool $stripQueryParams = false): ?string
     {
-        if (!isset($this->owner->File)) {
+        /** @var File $owner */
+        $owner = $this->getOwner();
+
+        if (!isset($owner->File)) {
             return null;
         }
 
-        // For publicly accessible file, return the path from URL of the file
-        if ($this->owner->isPublished()) {
-            return PUBLIC_PATH . $this->owner->File->getURL();
+        $sourceUrl = $this->owner->File->getSourceURL() ?? '';
+        if ($stripQueryParams) {
+            return strtok($sourceUrl, '?');
         }
 
-        // For protected file, construct the expected path of the file based on
-        // - Asset folder name
-        // - Name of the secure folder
-        // - URL of the file
-        $assetDir = DIRECTORY_SEPARATOR . ASSETS_DIR . DIRECTORY_SEPARATOR;
-        $assetDirLength = strlen($assetDir);
-        $sourceUrl = $this->owner->File->getSourceURL();
-
-        return DIRECTORY_SEPARATOR . File::join_paths(
-            ASSETS_PATH,
-            Config::inst()->get(ProtectedAssetAdapter::class, 'secure_folder'),
-            str_starts_with($sourceUrl, $assetDir) ? substr($sourceUrl, $assetDirLength) : $sourceUrl
-        );
+        return $sourceUrl;
     }
 
     /**
