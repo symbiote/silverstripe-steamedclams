@@ -98,16 +98,12 @@ class ClamAV
     {
         $filepath = $file->getFullPath(true);
 
-        if ($file->exists()) {
-            try {
-                $clamd = $this->getClamd();
+        try {
+            $clamd = $this->getClamd();
 
-                $scanResult = $clamd->scanStream($file->getString());
-            } catch (\Socket\Raw\Exception $e) {
-                $this->setLastExceptionAndLog($e);
-                $scanResult = null;
-            }
-        } else {
+            $scanResult = $clamd->scanStream($file->getString());
+        } catch (\Socket\Raw\Exception $e) {
+            $this->setLastExceptionAndLog($e);
             $scanResult = null;
         }
 
