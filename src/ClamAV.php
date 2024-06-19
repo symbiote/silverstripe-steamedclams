@@ -155,7 +155,7 @@ class ClamAV
                 $clamdClient->startSession();
             }
         } catch (\Socket\Raw\Exception $e) {
-            throw new \RuntimeException('ClamAV socket error: ' . $e->getMessage());
+            throw new Exception('ClamAV socket error: ' . $e->getMessage());
         }
 
         return $this->clamd_instance = $clamdClient;
