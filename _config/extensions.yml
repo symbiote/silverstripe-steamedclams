@@ -7,3 +7,6 @@ SilverStripe\Assets\File:
 SilverStripe\SiteConfig\SiteConfig:
   extensions:
     -  Symbiote\SteamedClams\Extension\ClamAVSiteConfigExtension
+SilverStripe\Admin\Forms\UsedOnTable:
+  extensions:
+    - Symbiote\SteamedClams\Extension\ClamAVUsedOnTableExtension

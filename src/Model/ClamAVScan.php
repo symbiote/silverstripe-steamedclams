@@ -366,12 +366,13 @@ class ClamAVScan extends DataObject
     public function processFileActionDelete()
     {
         if ($this->FileID > 0) {
+            /** @var File $file */
             $file = $this->File();
             if ($file->exists()) {
-                $file->delete();
+                $file->deleteFile();
             }
         }
-        $action = (int)$this->Action;
+        $action = (int) $this->Action;
         if ($action !== ClamAVScan::ACTION_DELETED) {
             $this->Action = ClamAVScan::ACTION_DELETED;
             $member = Security::getCurrentUser();
@@ -539,7 +540,7 @@ class ClamAVScan extends DataObject
     public function getRawDataSummary()
     {
         $rawData = $this->RawData;
-        $value = ($rawData && isset($rawData['stats'])) ? $rawData['stats'] : '';
+        $value = ($rawData && isset($rawData['status'])) ? $rawData['status'] : '';
 
         return $value;
     }
@@ -551,7 +552,7 @@ class ClamAVScan extends DataObject
     {
         $value = $this->getField('RawData');
         if (is_string($value)) {
-            $value = Convert::json2array($value);
+            $value = json_decode($value, true);
         }
 
         return $value;
@@ -561,11 +562,12 @@ class ClamAVScan extends DataObject
      * @param array $value
      *
      * @return null
+     * @throws \JsonException
      */
     public function setRawData($value)
     {
         if (is_array($value)) {
-            $value = Convert::array2json($value);
+            $value = json_encode($value, JSON_THROW_ON_ERROR);
         }
         $this->setField('RawData', $value);
     }
